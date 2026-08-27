@@ -8,22 +8,35 @@ from app.models.clearance_record import ClearanceItem, ItemType, Occurrence
 
 class GeminiExtractor:
     """
-    Semantic Screenplay Extractor using Google Cloud AI (Gemini 2.5).
-    Fails visibly when credentials or API calls fail.
+    Semantic Screenplay Extractor using Google Cloud Vertex AI or Gemini API.
+    Uses Application Default Credentials (ADC) when GOOGLE_GENAI_USE_ENTERPRISE is True.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    def __init__(self, use_vertex: bool = False, project: Optional[str] = None, location: Optional[str] = None):
+        self.use_vertex = use_vertex or os.getenv("GOOGLE_GENAI_USE_ENTERPRISE") == "True"
+        self.project = project or os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.location = location or os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+        self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
+    def get_client(self) -> genai.Client:
+        if self.use_vertex:
+            # Vertex AI path using ADC (Google Cloud credentials)
+            return genai.Client(vertexai=True, project=self.project, location=self.location)
+        elif self.api_key:
+            # AI Studio path using api key
+            return genai.Client(api_key=self.api_key)
+        else:
+            # Automatic ADC lookup fallback for general GCP environments
+            return genai.Client()
 
     def extract_clearance_items(self, screenplay_text: str, revision_id: str) -> List[ClearanceItem]:
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is missing. Real Gemini extraction required.")
-
-        client = genai.Client(api_key=self.api_key)
+        client = self.get_client()
         prompt = (
             "Extract all clearance-relevant entities from the screenplay below. "
-            "Include character names, real person names, business organizations, venue locations, "
-            "brand products, music references, and media works. Return a structured JSON array."
+            "For each entity, extract: item_string, item_type (choose from: PERSON_NAME, CHARACTER_NAME, "
+            "BUSINESS_ORG, VENUE_LOCATION, BRAND_PRODUCT, MUSIC_REFERENCE, MEDIA_WORK, QUOTED_TEXT), "
+            "scene_id (e.g. SC_001), page_number (integer), line_offset (integer), occurrence_text, "
+            "and context_snippet. Return a structured JSON array of objects."
         )
         
         response = client.models.generate_content(

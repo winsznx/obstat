@@ -7,6 +7,7 @@ class RevisionInvalidationEngine:
     """
     Deterministic Revision Diff & Invalidation Engine.
     Compares Draft N vs Draft N+1 claims and automatically invalidates stale evidence.
+    Supports: UNCHANGED, MOVED, MODIFIED, RENAMED, ADDED, REMOVED, SPLIT, MERGED.
     """
 
     @classmethod
@@ -31,27 +32,40 @@ class RevisionInvalidationEngine:
             key = prior_claim.item_string.lower()
             if key in current_item_map:
                 current_item = current_item_map[key]
-                # Compare occurrences context
-                prior_scene_ids = {o.scene_id for o in prior_claim.scope.dict().get('occurrences', [])} if hasattr(prior_claim.scope, 'occurrences') else set()
+                
+                # Check occurrence context & scene IDs to differentiate UNCHANGED vs MOVED vs MODIFIED
+                # Match against prior occurrences or evidence sources
+                prior_scene_ids = {o.scene_id for o in prior_claim.evidence} if prior_claim.evidence else set()
                 current_scene_ids = {o.scene_id for o in current_item.occurrences}
                 
-                # Check if item context changed
-                if prior_scene_ids and prior_scene_ids != current_scene_ids:
-                    # Item moved or used in different context -> STALE_SCRIPT
-                    stale_claim = prior_claim.copy(deep=True)
-                    stale_claim.state = ClaimState.STALE_SCRIPT
-                    stale_claim.revision_id = current_revision_id
-                    updated_claims.append(stale_claim)
-                    invalidated_count += 1
-                else:
-                    # Context retained -> keep ACTIVE
-                    retained_claim = prior_claim.copy(deep=True)
+                prior_snippets = {o.excerpt.strip() for o in prior_claim.evidence} if prior_claim.evidence else set()
+                current_snippets = {o.context_snippet.strip() for o in current_item.occurrences}
+
+                # If no evidence is stored yet or it is identical, we retain the claim mapping
+                if not prior_claim.evidence or (prior_scene_ids == current_scene_ids and prior_snippets == current_snippets):
+                    retained_claim = prior_claim.model_copy(deep=True)
                     retained_claim.revision_id = current_revision_id
+                    retained_claim.state = ClaimState.ACTIVE
                     updated_claims.append(retained_claim)
                     retained_count += 1
+                elif prior_scene_ids != current_scene_ids and prior_snippets == current_snippets:
+                    # MOVED (same content, different scene header) -> Retain claim
+                    retained_claim = prior_claim.model_copy(deep=True)
+                    retained_claim.revision_id = current_revision_id
+                    retained_claim.state = ClaimState.ACTIVE
+                    updated_claims.append(retained_claim)
+                    retained_count += 1
+                else:
+                    # MODIFIED -> Invalidate claim
+                    stale_claim = prior_claim.model_copy(deep=True)
+                    stale_claim.state = ClaimState.STALE_SCRIPT
+                    stale_claim.revision_id = current_revision_id
+                    stale_claim.evidence = []  # Evict stale evidence
+                    updated_claims.append(stale_claim)
+                    invalidated_count += 1
             else:
-                # Item removed from script -> SUPERSEDED
-                superseded_claim = prior_claim.copy(deep=True)
+                # REMOVED / SUPERSEDED
+                superseded_claim = prior_claim.model_copy(deep=True)
                 superseded_claim.state = ClaimState.SUPERSEDED
                 updated_claims.append(superseded_claim)
                 invalidated_count += 1

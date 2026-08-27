@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Any
 from app.models.clearance_record import ItemType
 
@@ -36,7 +37,6 @@ class ProvenanceEgressFirewall:
         scope_territory: str = "US"
     ) -> OutboundQuery:
         
-        # Check query length constraint (max 200 chars as per Parallel API guidelines)
         query_text = f"{item_string} {search_template} {scope_territory}".strip()
         if len(query_text) > 200:
             query_text = query_text[:200].strip()
@@ -46,16 +46,18 @@ class ProvenanceEgressFirewall:
         provenance = []
 
         for token in tokens:
-            cleaned = re_sub = token.strip('",.:;')
+            cleaned = token.strip('",.:;')
             if cleaned in item_tokens:
                 provenance.append("ITEM_TOKEN")
             elif cleaned in cls.ALLOWED_TEMPLATE_TOKENS:
                 provenance.append("TEMPLATE_TOKEN")
-            elif cleaned.upper() in {"US", "GLOBAL", "UK", "CA", "EU", scope_territory.lower()}:
+            elif cleaned.upper() in {"US", "GLOBAL", "UK", "CA", "EU", scope_territory.upper()}:
                 provenance.append("SCOPE_TOKEN")
             else:
-                # If a token cannot be verified as ITEM, TEMPLATE, or SCOPE token, reject
-                raise EgressViolation(f"Forbidden token '{token}' in outbound query '{query_text}'. Script context leakage detected.")
+                raise EgressViolation(
+                    f"Forbidden token '{token}' in outbound query '{query_text}'. "
+                    f"Script context leakage detected."
+                )
 
         return OutboundQuery(
             query_string=query_text,

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Disable experimental Turbopack CSS loader issues */
+  output: 'standalone'
 };
 
 export default nextConfig;

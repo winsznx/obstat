@@ -1,6 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FileText, ShieldCheck, ClipboardList, Activity, GitCommit, HelpCircle, 
+  ChevronRight, AlertTriangle, CheckCircle, Search, ExternalLink, Archive,
+  PlusCircle, RefreshCw, Send, ArrowRight
+} from 'lucide-react';
+
+interface Occurrence {
+  revision_id: string;
+  scene_id: string;
+  page_number: number;
+  line_offset: number;
+  occurrence_text: string;
+  context_snippet: string;
+}
 
 interface EvidenceRecord {
   evidence_id: string;
@@ -29,332 +43,655 @@ interface Claim {
   evidence: EvidenceRecord[];
   human_disposition?: string;
   disposition_note?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-type TabType = 'overview' | 'comparison' | 'claims' | 'egress' | 'evals';
+interface Project {
+  project_id: string;
+  title: string;
+  created_at: string;
+  active_revision_id?: string;
+}
+
+interface Revision {
+  revision_id: string;
+  project_id: string;
+  title: string;
+  draft_label: string;
+  file_name: string;
+  sha256: string;
+  total_scenes: number;
+  total_pages: number;
+}
+
+interface EgressLog {
+  query: string;
+  allowed: boolean;
+  provenance: string[];
+  search_id: string;
+  timestamp: string;
+}
+
+interface Alternative {
+  alternative_name: string;
+  outcome: string;
+  evidence: EvidenceRecord[];
+}
 
 const API_BASE = 'http://localhost:8000';
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [projectId, setProjectId] = useState<string | null>(null);
+export default function Workspace() {
+  // Navigation states
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [activeRevisionId, setActiveRevisionId] = useState<string | null>(null);
+  const [rawText, setRawText] = useState<string>('');
   const [claims, setClaims] = useState<Claim[]>([]);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [invalidationMetrics, setInvalidationMetrics] = useState<any>(null);
-  const [draftLabel, setDraftLabel] = useState<string>('Draft 12 (Original)');
+  
+  // Work Queue states
+  const [activeTab, setActiveTab] = useState<'workspace' | 'packet' | 'assurance'>('workspace');
+  const [filterType, setFilterType] = useState<string>('ALL');
 
-  // Initialize or fetch project from backend
+  // Input states
+  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [draftLabel, setDraftLabel] = useState('Draft 12');
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Resolution/Alternatives states
+  const [altInput, setAltInput] = useState('');
+  const [alternatives, setAlternatives] = useState<Alternative[]>([]);
+  const [altLoading, setAltLoading] = useState(false);
+
+  // Assurance states
+  const [egressLogs, setEgressLogs] = useState<EgressLog[]>([]);
+
+  // 1. Initial Load of Projects
   useEffect(() => {
-    async function initProject() {
-      try {
-        const res = await fetch(`${API_BASE}/api/projects`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: 'The Starlight Heist' })
-        });
-        if (res.ok) {
-          const project = await res.json();
-          setProjectId(project.project_id);
-        }
-      } catch (err) {
-        console.error('Backend API offline, connecting live runtime fallback.', err);
-      }
-    }
-    initProject();
+    fetchProjects();
   }, []);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 2. Load Revisions & Egress Log updates
+  useEffect(() => {
+    if (activeProject) {
+      fetchRevisions(activeProject.project_id);
+    }
+  }, [activeProject]);
+
+  useEffect(() => {
+    if (activeRevisionId) {
+      fetchRevisionDetails(activeRevisionId);
+    }
+  }, [activeRevisionId]);
+
+  useEffect(() => {
+    if (activeTab === 'assurance') {
+      fetchEgressLogs();
+    }
+  }, [activeTab]);
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/projects`);
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data);
+        if (data.length > 0 && !activeProject) {
+          setActiveProject(data[0]);
+          if (data[0].active_revision_id) {
+            setActiveRevisionId(data[0].active_revision_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('API Server Offline', err);
+    }
+  };
+
+  const fetchRevisions = async (projectId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/projects/${projectId}/revisions`);
+      if (res.ok) {
+        const data = await res.json();
+        setRevisions(data);
+      }
+    } catch (err) {}
+  };
+
+  const fetchRevisionDetails = async (revId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/revisions/${revId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRawText(data.raw_text);
+        setClaims(data.claims);
+      }
+    } catch (err) {}
+  };
+
+  const fetchEgressLogs = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/assurance/egress_logs`);
+      if (res.ok) {
+        const data = await res.json();
+        setEgressLogs(data);
+      }
+    } catch (err) {}
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectTitle.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newProjectTitle })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNewProjectTitle('');
+        fetchProjects();
+        setActiveProject(data);
+        setActiveRevisionId(null);
+        setRawText('');
+        setClaims([]);
+      }
+    } catch (err) {}
+  };
+
+  const handleUploadScript = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !projectId) return;
+    if (!file || !activeProject) return;
 
     setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/projects/${projectId}/upload_script?draft_label=${encodeURIComponent(draftLabel)}`, {
+      const res = await fetch(`${API_BASE}/api/projects/${activeProject.project_id}/upload_script?draft_label=${encodeURIComponent(draftLabel)}`, {
         method: 'POST',
         body: formData
       });
       if (res.ok) {
         const data = await res.json();
-        setClaims(data.claims);
-        setInvalidationMetrics(data.invalidation_metrics);
+        setActiveRevisionId(data.revision.revision_id);
+        fetchRevisions(activeProject.project_id);
+        fetchRevisionDetails(data.revision.revision_id);
       }
     } catch (err) {
-      console.error('Upload failed', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const isPacketComplete = claims.length > 0 && claims.every(c => c.state === 'ACTIVE' && c.outcome !== 'INSUFFICIENT_COVERAGE');
+  const handleDisposition = async (claimId: string, dispo: string, note: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/claims/${claimId}/disposition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ human_disposition: dispo, disposition_note: note })
+      });
+      if (res.ok) {
+        if (activeRevisionId) {
+          fetchRevisionDetails(activeRevisionId);
+        }
+        // Update selectedClaim reference
+        const updatedClaim = await res.json();
+        setSelectedClaim(updatedClaim);
+      }
+    } catch (err) {}
+  };
+
+  const handleResolveAlternatives = async () => {
+    if (!altInput.trim() || !selectedClaim) return;
+    setAltLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/claims/${selectedClaim.claim_id}/resolve_alternatives`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alternative_name: altInput })
+      });
+      if (res.ok) {
+        setAltInput('');
+        fetchAlternatives(selectedClaim.claim_id);
+      }
+    } catch (err) {
+    } finally {
+      setAltLoading(false);
+    }
+  };
+
+  const fetchAlternatives = async (claimId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/claims/${claimId}/alternatives`);
+      if (res.ok) {
+        const data = await res.json();
+        setAlternatives(data);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    if (selectedClaim) {
+      fetchAlternatives(selectedClaim.claim_id);
+    } else {
+      setAlternatives([]);
+    }
+  }, [selectedClaim]);
+
+  // Filtered clearance queue calculation
+  const filteredClaims = claims.filter(c => {
+    if (searchQuery && !c.item_string.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    if (filterType === 'ALL') return true;
+    if (filterType === 'STALE' && c.state === 'STALE_SCRIPT') return true;
+    if (filterType === 'MATCH_FOUND' && c.outcome === 'MATCH_FOUND') return true;
+    if (filterType === 'NO_MATCH' && c.outcome === 'NO_MATCH_FOUND_IN_SCOPE') return true;
+    return c.outcome === filterType;
+  });
+
+  const packetComplete = claims.length > 0 && claims.every(c => c.state === 'ACTIVE' && c.outcome !== 'INSUFFICIENT_COVERAGE');
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#181925] font-sans antialiased">
-      {/* Visitors White Engineering Blueprint Header */}
-      <header className="border-b border-[#e8e8e8] bg-[#ffffff] sticky top-0 z-50 px-8 py-4 flex items-center justify-between shadow-[0_1px_1px_1px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-[#fafafa] text-[#181925] font-sans antialiased flex flex-col">
+      {/* 1. Nav Header */}
+      <header className="border-b border-[#e8e8e8] bg-[#ffffff] sticky top-0 z-50 px-8 py-3.5 flex items-center justify-between shadow-sm">
+        <div className="flex items-center space-x-6">
           <div className="h-9 w-9 rounded-full bg-[#918df6] flex items-center justify-center font-bold text-white shadow-sm">
             O
           </div>
           <div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <h1 className="font-bold tracking-tight text-xl text-[#181925]">OBSTAT</h1>
-              <span className="text-[11px] font-mono bg-[#def6e4] text-[#33c758] border border-[#33c758]/30 px-2 py-0.5 rounded-full font-semibold">
-                LIVE BACKEND CONNECTED
+              <span className="text-[10px] font-mono bg-[#def6e4] text-[#33c758] border border-[#33c758]/30 px-2 py-0.5 rounded-full font-semibold">
+                CONTINUOUS EVIDENCE CONTROL
               </span>
             </div>
-            <p className="text-xs text-[#666666]">Continuous Clearance Evidence Control for Film Productions</p>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <label className="bg-[#918df6] hover:bg-[#9580ff] text-white px-5 py-2.5 rounded-full text-xs font-semibold tracking-tight transition shadow-[0_1px_1px_1px_rgba(0,0,0,0.08)] cursor-pointer">
-            + Upload Screenplay (.txt/.fdx)
-            <input type="file" onChange={handleFileUpload} className="hidden" accept=".txt,.fdx,.pdf" />
-          </label>
+
+        {/* Global Tab Navigation */}
+        <div className="flex space-x-1 bg-[#f5f5f5] p-1 rounded-full border border-[#e8e8e8]">
+          <button 
+            onClick={() => setActiveTab('workspace')}
+            className={`px-5 py-1.5 text-xs rounded-full font-medium transition ${activeTab === 'workspace' ? 'bg-[#ffffff] text-[#181925] shadow-sm font-semibold' : 'text-[#666666]'}`}
+          >
+            Clearance Workspace
+          </button>
+          <button 
+            onClick={() => setActiveTab('packet')}
+            className={`px-5 py-1.5 text-xs rounded-full font-medium transition ${activeTab === 'packet' ? 'bg-[#ffffff] text-[#181925] shadow-sm font-semibold' : 'text-[#666666]'}`}
+          >
+            Research Packet
+          </button>
+          <button 
+            onClick={() => setActiveTab('assurance')}
+            className={`px-5 py-1.5 text-xs rounded-full font-medium transition ${activeTab === 'assurance' ? 'bg-[#ffffff] text-[#181925] shadow-sm font-semibold' : 'text-[#666666]'}`}
+          >
+            Assurance Proof
+          </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-[1200px] mx-auto px-8 py-10">
-        {/* Workspace Canvas Panel Card */}
-        <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] p-8 mb-10 shadow-[0_1px_3px_0px_rgba(0,0,0,0.06),0_8px_16px_0px_rgba(0,0,0,0.06)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center space-x-3">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[#2c78fc] bg-[#f5f5f5] px-3 py-1 rounded-full border border-[#e8e8e8] font-semibold">
-                  Production Workspace
-                </span>
-                <span className="text-xs text-[#666666] font-mono">ID: {projectId || 'Connecting...'}</span>
-              </div>
-              <h2 className="text-3xl font-bold mt-3 text-[#181925] tracking-tight">Project: The Starlight Heist</h2>
-              <p className="text-[#666666] text-sm mt-1">
-                Active Revision: <span className="font-semibold text-[#181925]">{draftLabel}</span>
-              </p>
-            </div>
-
-            {/* Script Revision Inputs */}
-            <div className="flex items-center space-x-2 bg-[#f5f5f5] p-2 rounded-full border border-[#e8e8e8]">
+      {/* Main Workspace Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Drawer - Productions and Revision Timeline */}
+        <aside className="w-80 border-r border-[#e8e8e8] bg-[#ffffff] p-6 flex flex-col space-y-6 overflow-y-auto">
+          <div>
+            <h2 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Productions</h2>
+            <form onSubmit={handleCreateProject} className="mb-4">
               <input
                 type="text"
-                value={draftLabel}
-                onChange={(e) => setDraftLabel(e.target.value)}
-                className="bg-[#ffffff] text-[#181925] text-xs font-mono px-3 py-1.5 rounded-full border border-[#e8e8e8] focus:outline-none"
-                placeholder="Draft Label (e.g. Draft 13)"
+                placeholder="New production title..."
+                value={newProjectTitle}
+                onChange={(e) => setNewProjectTitle(e.target.value)}
+                className="w-full text-xs border border-[#e8e8e8] rounded-lg px-3 py-2 bg-[#fafafa] focus:outline-none focus:ring-1 focus:ring-[#918df6]"
               />
+            </form>
+            <div className="space-y-1.5">
+              {projects.map((proj) => (
+                <button
+                  key={proj.project_id}
+                  onClick={() => {
+                    setActiveProject(proj);
+                    if (proj.active_revision_id) {
+                      setActiveRevisionId(proj.active_revision_id);
+                    } else {
+                      setActiveRevisionId(null);
+                      setRawText('');
+                      setClaims([]);
+                    }
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition ${activeProject?.project_id === proj.project_id ? 'bg-[#f5f5f5] text-[#181925]' : 'text-[#666666] hover:bg-[#fafafa]'}`}
+                >
+                  <span className="truncate">{proj.title}</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-[#999999]" />
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Metric Callouts */}
-          <div className="mt-8 pt-6 border-t border-[#e8e8e8] grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-[#fafafa] p-4 rounded-[16px] border border-[#e8e8e8]">
-              <p className="text-xs text-[#666666] font-mono uppercase tracking-wider">Total Claims</p>
-              <p className="text-3xl font-bold text-[#181925] mt-1">{claims.length}</p>
-            </div>
-            <div className="bg-[#def6e4] p-4 rounded-[16px] border border-[#33c758]/30">
-              <p className="text-xs text-[#33c758] font-mono uppercase tracking-wider font-semibold">Active Valid Claims</p>
-              <p className="text-3xl font-bold text-[#33c758] mt-1">
-                {claims.filter(c => c.state === 'ACTIVE').length}
-              </p>
-            </div>
-            <div className="bg-[#fff8e6] p-4 rounded-[16px] border border-[#ffa600]/30">
-              <p className="text-xs text-[#ffa600] font-mono uppercase tracking-wider font-semibold">Stale Claims (Invalidated)</p>
-              <p className="text-3xl font-bold text-[#ffa600] mt-1">
-                {claims.filter(c => c.state !== 'ACTIVE').length}
-              </p>
-            </div>
-            <div className="bg-[#fafafa] p-4 rounded-[16px] border border-[#e8e8e8]">
-              <p className="text-xs text-[#666666] font-mono uppercase tracking-wider">Parallel Searches Saved</p>
-              <p className="text-3xl font-bold text-[#918df6] mt-1">
-                {invalidationMetrics ? invalidationMetrics.searches_saved : 0}
-              </p>
-            </div>
-          </div>
-        </div>
+          {activeProject && (
+            <div className="pt-4 border-t border-[#e8e8e8]">
+              <h2 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Revision Timeline</h2>
+              
+              <div className="mb-4 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Next draft label (e.g. Draft 13)"
+                  value={draftLabel}
+                  onChange={(e) => setDraftLabel(e.target.value)}
+                  className="w-full text-xs border border-[#e8e8e8] rounded-lg px-3 py-1.5 bg-[#fafafa]"
+                />
+                <label className="w-full bg-[#fafafa] hover:bg-[#f5f5f5] text-xs font-semibold border border-[#e8e8e8] rounded-lg px-3 py-2 flex items-center justify-center cursor-pointer transition">
+                  <PlusCircle className="h-4 w-4 mr-2 text-[#666666]" />
+                  Upload Script Draft
+                  <input type="file" onChange={handleUploadScript} className="hidden" accept=".txt,.fdx,.pdf" />
+                </label>
+              </div>
 
-        {/* Tab Navigation */}
-        <div className="border-b border-[#e8e8e8] mb-8 flex space-x-8">
-          {(['overview', 'comparison', 'claims', 'egress', 'evals'] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-medium capitalize transition border-b-2 ${
-                activeTab === tab
-                  ? 'border-[#918df6] text-[#181925] font-semibold'
-                  : 'border-transparent text-[#666666] hover:text-[#181925]'
-              }`}
-            >
-              {tab === 'comparison' ? 'Revision Diff & Invalidation' : tab === 'egress' ? 'Egress Firewall Log' : tab === 'evals' ? 'Benchmark Evals' : tab}
-            </button>
-          ))}
-        </div>
+              <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-3 before:w-0.5 before:bg-[#e8e8e8]">
+                {revisions.map((rev) => (
+                  <div key={rev.revision_id} className="flex items-center space-x-3 pl-1.5 relative">
+                    <div className={`h-3.5 w-3.5 rounded-full border-2 ${activeRevisionId === rev.revision_id ? 'bg-[#918df6] border-[#918df6]' : 'bg-[#ffffff] border-[#e8e8e8]'} z-10`} />
+                    <button
+                      onClick={() => setActiveRevisionId(rev.revision_id)}
+                      className="text-left"
+                    >
+                      <p className={`text-xs font-bold ${activeRevisionId === rev.revision_id ? 'text-[#181925]' : 'text-[#666666]'}`}>
+                        {rev.draft_label}
+                      </p>
+                      <p className="text-[10px] text-[#999999] font-mono truncate max-w-[180px]">{rev.file_name}</p>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
 
-        {/* OVERVIEW TAB */}
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] p-8 shadow-sm">
-              <h3 className="font-bold text-lg text-[#181925] mb-4">Clearance Packet Completion Status</h3>
-              {loading ? (
-                <div className="p-6 text-center text-xs font-mono text-[#666666]">
-                  Running ADK 2.x Workflow & Parallel Search API...
+        {activeTab === 'workspace' && (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Center Area: Script Screenplay view */}
+            <section className="flex-1 border-r border-[#e8e8e8] bg-[#ffffff] p-8 overflow-y-auto flex flex-col">
+              <div className="border-b border-[#e8e8e8] pb-4 mb-6">
+                <h2 className="text-sm font-bold text-[#181925]">Active Screenplay Review</h2>
+                <p className="text-xs text-[#666666] mt-0.5">Click highlighted terms to view clearance plans and evidence.</p>
+              </div>
+
+              {rawText ? (
+                <pre className="whitespace-pre-wrap font-mono text-xs text-[#333333] leading-relaxed max-w-2xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 overflow-x-auto shadow-sm">
+                  {rawText.split('\n').map((line, idx) => {
+                    // Match extracted items and highlight them
+                    let renderedLine: React.ReactNode = line;
+                    for (const claim of claims) {
+                      const regex = new RegExp(`\\b(${claim.item_string})\\b`, 'i');
+                      if (regex.test(line)) {
+                        const parts = line.split(regex);
+                        renderedLine = (
+                          <span>
+                            {parts[0]}
+                            <button
+                              onClick={() => setSelectedClaim(claim)}
+                              className={`px-1.5 py-0.5 rounded font-bold transition border ${
+                                claim.outcome === 'MATCH_FOUND' 
+                                  ? 'bg-[#fff8e6] text-[#ffa600] border-[#ffa600]/30 hover:bg-[#ffecc0]'
+                                  : 'bg-[#def6e4] text-[#33c758] border-[#33c758]/30 hover:bg-[#c9f0d1]'
+                              }`}
+                            >
+                              {claim.item_string}
+                            </button>
+                            {parts[2]}
+                          </span>
+                        );
+                        break;
+                      }
+                    }
+                    return <div key={idx} className="min-h-[1.5rem]">{renderedLine}</div>;
+                  })}
+                </pre>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <FileText className="h-12 w-12 text-[#999999] mb-4" />
+                  <p className="text-sm font-bold text-[#181925]">No screenplay uploaded yet</p>
+                  <p className="text-xs text-[#666666] mt-1">Upload a script revision in the left timeline to begin continuous clearance control.</p>
                 </div>
-              ) : isPacketComplete ? (
-                <div className="bg-[#def6e4] border border-[#33c758]/40 rounded-[16px] p-6 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-4 w-4 rounded-full bg-[#33c758] ring-4 ring-[#33c758]/20"></div>
+              )}
+            </section>
+
+            {/* Right Pane: Clearance Work Queue or Claim Inspector */}
+            <section className="w-96 bg-[#ffffff] flex flex-col overflow-hidden">
+              {selectedClaim ? (
+                // 1. Claim Inspector View
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="p-6 border-b border-[#e8e8e8] flex justify-between items-center bg-[#fafafa]">
                     <div>
-                      <h4 className="font-bold text-[#181925] text-base">RESEARCH PACKET COMPLETE</h4>
-                      <p className="text-xs text-[#666666] mt-0.5">All clearance claims have verified active evidence under live policy.</p>
+                      <h3 className="font-bold text-base text-[#181925]">{selectedClaim.item_string}</h3>
+                      <p className="text-xs text-[#666666] font-mono mt-0.5">{selectedClaim.item_type}</p>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedClaim(null)}
+                      className="text-xs text-[#666666] hover:bg-[#e8e8e8] px-2 py-1 rounded-md"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                    {/* Research Outcome */}
+                    <div className="bg-[#fafafa] p-4 rounded-xl border border-[#e8e8e8]">
+                      <h4 className="text-[10px] font-mono text-[#999999] uppercase tracking-wider">Research Outcome</h4>
+                      <p className={`text-base font-bold mt-1 ${selectedClaim.outcome === 'MATCH_FOUND' ? 'text-[#ffa600]' : 'text-[#33c758]'}`}>
+                        {selectedClaim.outcome}
+                      </p>
+                      {selectedClaim.evidence.length > 0 ? (
+                        <p className="text-xs text-[#666666] mt-1">{selectedClaim.evidence.length} sources matched verbatim.</p>
+                      ) : (
+                        <p className="text-xs text-[#666666] mt-1">No matches found in target scope.</p>
+                      )}
+                    </div>
+
+                    {/* Alternatives Resolution Workflow */}
+                    <div className="pt-4 border-t border-[#e8e8e8]">
+                      <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-2">Resolve / Find Alternatives</h4>
+                      <div className="flex space-x-2 mb-3">
+                        <input
+                          type="text"
+                          placeholder="Candidate alternative name..."
+                          value={altInput}
+                          onChange={(e) => setAltInput(e.target.value)}
+                          className="flex-1 text-xs border border-[#e8e8e8] rounded-lg px-3 py-1.5"
+                        />
+                        <button
+                          onClick={handleResolveAlternatives}
+                          disabled={altLoading}
+                          className="bg-[#918df6] text-white text-xs px-3 py-1.5 rounded-lg font-semibold"
+                        >
+                          {altLoading ? 'Searching...' : 'Resolve'}
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {alternatives.map((alt, idx) => (
+                          <div key={idx} className="bg-[#fafafa] border border-[#e8e8e8] rounded-lg p-2.5 flex items-center justify-between text-xs">
+                            <span className="font-semibold">{alt.alternative_name}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${alt.outcome === 'MATCH_FOUND' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
+                              {alt.outcome}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Human Disposition Selector */}
+                    <div className="pt-4 border-t border-[#e8e8e8]">
+                      <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-2">Record Disposition</h4>
+                      <div className="space-y-2">
+                        {(['KEEP_FOR_COUNSEL_REVIEW', 'CHANGE_REQUESTED', 'PERMISSION_REQUIRED', 'ALTERNATIVE_SELECTED', 'PROCEED_PER_COUNSEL'] as string[]).map((dispo) => (
+                          <button
+                            key={dispo}
+                            onClick={() => handleDisposition(selectedClaim.claim_id, dispo, 'Disposition updated by Clearance Team.')}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs border ${selectedClaim.human_disposition === dispo ? 'bg-[#def6e4] text-[#33c758] border-[#33c758]' : 'border-[#e8e8e8] hover:bg-[#fafafa]'}`}
+                          >
+                            {dispo.replace(/_/g, ' ')}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <span className="text-xs font-mono bg-[#ffffff] text-[#33c758] px-4 py-2 rounded-full border border-[#33c758]/30 font-semibold shadow-sm">
-                    Packet Complete
-                  </span>
                 </div>
               ) : (
-                <div className="bg-[#fff8e6] border border-[#ffa600]/40 rounded-[16px] p-6 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-4 w-4 rounded-full bg-[#ffa600] ring-4 ring-[#ffa600]/20"></div>
-                    <div>
-                      <h4 className="font-bold text-[#181925] text-base">RESEARCH PACKET BLOCKED / UNINITIALIZED</h4>
-                      <p className="text-xs text-[#666666] mt-0.5">Upload a screenplay file to trigger live Gemini extraction and Parallel Search API research.</p>
+                // 2. Queue List View
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="p-6 border-b border-[#e8e8e8]">
+                    <h3 className="font-bold text-base text-[#181925]">Clearance work queue</h3>
+                    
+                    {/* Search Field */}
+                    <div className="relative mt-3">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
+                      <input
+                        type="text"
+                        placeholder="Search queue..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full text-xs border border-[#e8e8e8] rounded-lg pl-9 pr-4 py-2 bg-[#fafafa]"
+                      />
                     </div>
+
+                    {/* Queue Filter Tabs */}
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {['ALL', 'STALE', 'MATCH_FOUND', 'NO_MATCH'].map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setFilterType(f)}
+                          className={`px-2.5 py-1 rounded text-[10px] font-mono border ${filterType === f ? 'bg-[#918df6] text-white border-[#918df6]' : 'bg-[#fafafa] text-[#666666] border-[#e8e8e8] hover:bg-[#f5f5f5]'}`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 divide-y divide-[#e8e8e8] overflow-y-auto">
+                    {filteredClaims.map((claim) => (
+                      <button
+                        key={claim.claim_id}
+                        onClick={() => setSelectedClaim(claim)}
+                        className="w-full text-left p-4 hover:bg-[#fafafa] transition flex flex-col space-y-1.5"
+                      >
+                        <div className="flex justify-between items-start w-full">
+                          <span className="font-bold text-xs text-[#181925]">{claim.item_string}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${claim.outcome === 'MATCH_FOUND' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
+                            {claim.outcome}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-[#666666]">
+                          <span>{claim.item_type}</span>
+                          <span className="font-mono text-[#999999]">{claim.state}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {filteredClaims.length === 0 && (
+                      <p className="text-xs text-center text-[#666666] py-8">No matching clearance claims found.</p>
+                    )}
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Invariant Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] p-6 shadow-sm">
-                <h4 className="text-xs font-mono text-[#918df6] uppercase tracking-wider font-semibold mb-2">Core Product Invariant 1</h4>
-                <p className="text-base font-bold text-[#181925]">
-                  &ldquo;Change the script, and stale clearance evidence cannot silently survive.&rdquo;
-                </p>
-                <p className="text-xs text-[#666666] mt-2 leading-relaxed">
-                  Every claim is cryptographic-hashed to script text, context, policy, and research scope. Any script modification invalidates stale evidence.
-                </p>
-              </div>
-              <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] p-6 shadow-sm">
-                <h4 className="text-xs font-mono text-[#918df6] uppercase tracking-wider font-semibold mb-2">Core Product Invariant 2</h4>
-                <p className="text-base font-bold text-[#181925]">
-                  &ldquo;No evidence, no completed research state.&rdquo;
-                </p>
-                <p className="text-xs text-[#666666] mt-2 leading-relaxed">
-                  Unusable, hallucinated, or unverified search classifications contribute zero toward negative coverage. Missing evidence keeps packet blocked.
-                </p>
-              </div>
-            </div>
+            </section>
           </div>
         )}
 
-        {/* CLAIMS TAB */}
-        {activeTab === 'claims' && (
-          <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-[#e8e8e8] bg-[#fafafa] flex justify-between items-center">
-              <h3 className="text-base font-bold text-[#181925]">Clearance Claim Ledger</h3>
-              <span className="text-xs font-mono text-[#666666]">Showing {claims.length} Claims</span>
+        {/* PACKET TAB */}
+        {activeTab === 'packet' && (
+          <section className="flex-1 bg-[#ffffff] p-8 overflow-y-auto flex flex-col">
+            <div className="border-b border-[#e8e8e8] pb-4 mb-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-[#181925]">Script Clearance Research Packet</h2>
+                <p className="text-xs text-[#666666] mt-0.5">Verification status of active script revisions.</p>
+              </div>
+              <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border ${packetComplete ? 'bg-[#def6e4] text-[#33c758] border-[#33c758]' : 'bg-[#fff8e6] text-[#ffa600] border-[#ffa600]'}`}>
+                {packetComplete ? 'RESEARCH PACKET COMPLETE' : 'RESEARCH PACKET BLOCKED'}
+              </span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#fafafa] text-[#666666] text-xs font-semibold uppercase tracking-wider border-b border-[#e8e8e8]">
-                    <th className="py-4 px-6">Item & Type</th>
-                    <th className="py-4 px-6">Claim State</th>
-                    <th className="py-4 px-6">Research Outcome</th>
-                    <th className="py-4 px-6">Parallel Search ID</th>
-                    <th className="py-4 px-6 text-right">Receipt</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e8e8e8] text-sm">
+
+            <div className="max-w-4xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 space-y-6">
+              <div className="border-b border-[#e8e8e8] pb-4">
+                <h3 className="text-lg font-bold text-[#181925]">{activeProject?.title}</h3>
+                <p className="text-xs text-[#666666] mt-1 font-mono">Revision ID: {activeRevisionId || 'No active revision'}</p>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider">Claims Ledger</h4>
+                <div className="divide-y divide-[#e8e8e8]">
                   {claims.map((claim) => (
-                    <tr key={claim.claim_id} className="hover:bg-[#fafafa] transition">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-[#181925]">{claim.item_string}</div>
-                        <div className="text-xs text-[#666666] font-mono">{claim.item_type}</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
-                          claim.state === 'ACTIVE'
-                            ? 'bg-[#def6e4] text-[#33c758] border-[#33c758]/30'
-                            : 'bg-[#fff8e6] text-[#ffa600] border-[#ffa600]/30'
-                        }`}>
-                          {claim.state}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-xs font-mono">
-                        <span className={claim.outcome === 'MATCH_FOUND' ? 'text-[#ffa600] font-semibold' : claim.outcome === 'NO_MATCH_FOUND_IN_SCOPE' ? 'text-[#33c758] font-semibold' : 'text-[#666666]'}>
+                    <div key={claim.claim_id} className="py-3 flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-[#181925]">{claim.item_string}</span>
+                        <span className="text-[10px] text-[#666666] ml-2">({claim.item_type})</span>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="font-mono text-[#999999]">{claim.state}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${claim.outcome === 'MATCH_FOUND' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
                           {claim.outcome}
                         </span>
-                      </td>
-                      <td className="py-4 px-6 text-xs text-[#666666] font-mono">{claim.search_ids?.[0] || 'N/A'}</td>
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => setSelectedClaim(claim)}
-                          className="text-xs text-[#918df6] hover:underline font-semibold"
-                        >
-                          Inspect Receipt
-                        </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* CLAIM RECEIPT MODAL */}
-        {selectedClaim && (
-          <div className="fixed inset-0 bg-[#181925]/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-[24px] max-w-2xl w-full p-8 space-y-6 shadow-2xl">
-              <div className="flex justify-between items-start border-b border-[#e8e8e8] pb-4">
-                <div>
-                  <h3 className="font-bold text-xl text-[#181925]">{selectedClaim.item_string}</h3>
-                  <p className="text-xs font-mono text-[#666666]">Claim ID: {selectedClaim.claim_id}</p>
                 </div>
-                <button
-                  onClick={() => setSelectedClaim(null)}
-                  className="text-[#666666] hover:text-[#181925] text-sm px-2 py-1 rounded-full hover:bg-[#f5f5f5]"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono bg-[#fafafa] p-4 rounded-[16px] border border-[#e8e8e8]">
-                <div>
-                  <p className="text-[#666666]">Item Type:</p>
-                  <p className="text-[#181925] font-semibold">{selectedClaim.item_type}</p>
-                </div>
-                <div>
-                  <p className="text-[#666666]">Claim State:</p>
-                  <p className="text-[#33c758] font-semibold">{selectedClaim.state}</p>
-                </div>
-                <div>
-                  <p className="text-[#666666]">Parallel Search ID:</p>
-                  <p className="text-[#181925] font-semibold">{selectedClaim.search_ids?.[0] || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-[#666666]">Research Outcome:</p>
-                  <p className="text-[#ffa600] font-semibold">{selectedClaim.outcome}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => setSelectedClaim(null)}
-                  className="bg-[#918df6] hover:bg-[#9580ff] text-white px-6 py-2.5 rounded-full text-xs font-semibold transition shadow-sm"
-                >
-                  Close Receipt
-                </button>
               </div>
             </div>
-          </div>
+          </section>
         )}
-      </main>
+
+        {/* ASSURANCE TAB */}
+        {activeTab === 'assurance' && (
+          <section className="flex-1 bg-[#ffffff] p-8 overflow-y-auto flex flex-col">
+            <div className="border-b border-[#e8e8e8] pb-4 mb-6">
+              <h2 className="text-xl font-bold text-[#181925]">Technical Assurance Evidence Surface</h2>
+              <p className="text-xs text-[#666666] mt-0.5">Auditable logs, model definitions, and Egress Firewall provenance metrics.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Egress Firewall Logs */}
+              <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 flex flex-col h-[500px]">
+                <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-4">Outbound Query Egress Logs</h3>
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {egressLogs.map((log, idx) => (
+                    <div key={idx} className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-3.5 text-xs font-mono">
+                      <div className="flex justify-between items-start">
+                        <span className={log.allowed ? 'text-[#33c758]' : 'text-red-500'}>
+                          {log.allowed ? 'ALLOWED_EGRESS' : 'EGRESS_BLOCKED'}
+                        </span>
+                        <span className="text-[10px] text-[#999999]">{log.timestamp.slice(11, 19)}</span>
+                      </div>
+                      <p className="text-[#181925] mt-1.5 font-bold">{log.query}</p>
+                      <p className="text-[10px] text-[#666666] mt-1">Provenance: {log.provenance.join(', ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Execution Provenance */}
+              <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 space-y-6">
+                <div>
+                  <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Model Configuration</h3>
+                  <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-4 text-xs space-y-2">
+                    <p><span className="font-semibold text-[#666666]">Google Model:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">gemini-2.5-flash</code></p>
+                    <p><span className="font-semibold text-[#666666]">Enterprise Vertex Route:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">GOOGLE_GENAI_USE_ENTERPRISE=True</code></p>
+                    <p><span className="font-semibold text-[#666666]">Region Location:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">us-central1</code></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import re
+import datetime
 from typing import List, Dict, Any
 from app.models.clearance_record import ItemType
+from app.services.db_store import DatabaseStore
 
 class OutboundQuery:
     def __init__(self, query_string: str, item_id: str, item_type: ItemType, token_provenance: List[str]):
@@ -45,19 +47,39 @@ class ProvenanceEgressFirewall:
         item_tokens = set(item_string.lower().split())
         provenance = []
 
-        for token in tokens:
-            cleaned = token.strip('",.:;')
-            if cleaned in item_tokens:
-                provenance.append("ITEM_TOKEN")
-            elif cleaned in cls.ALLOWED_TEMPLATE_TOKENS:
-                provenance.append("TEMPLATE_TOKEN")
-            elif cleaned.upper() in {"US", "GLOBAL", "UK", "CA", "EU", scope_territory.upper()}:
-                provenance.append("SCOPE_TOKEN")
-            else:
-                raise EgressViolation(
-                    f"Forbidden token '{token}' in outbound query '{query_text}'. "
-                    f"Script context leakage detected."
-                )
+        try:
+            for token in tokens:
+                cleaned = token.strip('",.:;')
+                if cleaned in item_tokens:
+                    provenance.append("ITEM_TOKEN")
+                elif cleaned in cls.ALLOWED_TEMPLATE_TOKENS:
+                    provenance.append("TEMPLATE_TOKEN")
+                elif cleaned.upper() in {"US", "GLOBAL", "UK", "CA", "EU", scope_territory.upper()}:
+                    provenance.append("SCOPE_TOKEN")
+                else:
+                    raise EgressViolation(
+                        f"Forbidden token '{token}' in outbound query '{query_text}'. "
+                        f"Script context leakage detected."
+                    )
+            
+            # Save allowed egress log to database persistence
+            DatabaseStore.save_egress_log(
+                query=query_text,
+                allowed=True,
+                provenance=provenance,
+                search_id=f"audit_{uuid_short()}",
+                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
+            )
+
+        except EgressViolation as e:
+            DatabaseStore.save_egress_log(
+                query=query_text,
+                allowed=False,
+                provenance=["VIOLATION"],
+                search_id="BLOCKED",
+                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
+            )
+            raise e
 
         return OutboundQuery(
             query_string=query_text,
@@ -65,3 +87,7 @@ class ProvenanceEgressFirewall:
             item_type=item_type,
             token_provenance=provenance
         )
+
+def uuid_short() -> str:
+    import uuid
+    return uuid.uuid4().hex[:8]

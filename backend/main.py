@@ -13,7 +13,7 @@ from app.services.screenplay_parser import ScreenplayParser
 from app.adk.extractor import GeminiExtractor
 from app.adk.graph import ADKGraphOrchestrator
 from app.services.invalidation_engine import RevisionInvalidationEngine
-from app.services.db_store import DatabaseStore, init_db
+from app.services.db_provider import get_repository
 from app.services.parallel_service import ParallelSearchService
 from app.adk.classifier import GeminiClassifier
 
@@ -30,9 +30,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize database schema on startup
-init_db()
 
 extractor = GeminiExtractor()
 orchestrator = ADKGraphOrchestrator()
@@ -54,18 +51,21 @@ def read_root():
 # 1. Productions List
 @app.get("/api/projects", response_model=List[Project])
 def get_projects():
-    return DatabaseStore.list_projects()
+    repo = get_repository()
+    return repo.list_projects()
 
 @app.post("/api/projects", response_model=Project)
 def create_project(req: ProjectCreateRequest):
+    repo = get_repository()
     project_id = f"proj_{uuid.uuid4().hex[:8]}"
     project = Project(project_id=project_id, title=req.title)
-    DatabaseStore.save_project(project)
+    repo.save_project(project)
     return project
 
 @app.get("/api/projects/{project_id}", response_model=Project)
 def get_project(project_id: str):
-    project = DatabaseStore.get_project(project_id)
+    repo = get_repository()
+    project = repo.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -73,14 +73,16 @@ def get_project(project_id: str):
 # 2. Revisions list for Timeline
 @app.get("/api/projects/{project_id}/revisions", response_model=List[Revision])
 def get_project_revisions(project_id: str):
-    return DatabaseStore.get_project_revisions(project_id)
+    repo = get_repository()
+    return repo.get_project_revisions(project_id)
 
 @app.get("/api/revisions/{revision_id}")
 def get_revision_details(revision_id: str):
-    data = DatabaseStore.get_revision(revision_id)
+    repo = get_repository()
+    data = repo.get_revision(revision_id)
     if not data:
         raise HTTPException(status_code=404, detail="Revision not found")
-    claims = DatabaseStore.get_claims_for_revision(revision_id)
+    claims = repo.get_claims_for_revision(revision_id)
     return {
         "revision": data["revision"],
         "raw_text": data["raw_text"],
@@ -90,7 +92,8 @@ def get_revision_details(revision_id: str):
 # 3. Upload & Run Core ADK / Parallel Research Flow
 @app.post("/api/projects/{project_id}/upload_script")
 async def upload_script(project_id: str, draft_label: str, file: UploadFile = File(...)):
-    project = DatabaseStore.get_project(project_id)
+    repo = get_repository()
+    project = repo.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -110,14 +113,14 @@ async def upload_script(project_id: str, draft_label: str, file: UploadFile = Fi
     )
     
     # Save revision metadata and text
-    DatabaseStore.save_revision(revision, raw_text=content)
+    repo.save_revision(revision, raw_text=content)
 
     # Extract clearance items using Gemini model
     extracted_items = extractor.extract_clearance_items(content, revision_id)
 
     # Check for prior revision to run invalidation engine
     if project.active_revision_id:
-        prior_claims = DatabaseStore.get_claims_for_revision(project.active_revision_id)
+        prior_claims = repo.get_claims_for_revision(project.active_revision_id)
         updated_claims, metrics = RevisionInvalidationEngine.compute_revision_diff(
             prior_claims=prior_claims,
             current_items=extracted_items,
@@ -139,9 +142,9 @@ async def upload_script(project_id: str, draft_label: str, file: UploadFile = Fi
             )
             updated_claims.extend(new_claims)
 
-        DatabaseStore.save_claims(updated_claims)
+        repo.save_claims(updated_claims)
         project.active_revision_id = revision_id
-        DatabaseStore.save_project(project)
+        repo.save_project(project)
         return {
             "revision": revision,
             "claims": updated_claims,
@@ -154,9 +157,9 @@ async def upload_script(project_id: str, draft_label: str, file: UploadFile = Fi
             items=extracted_items,
             scope=ResearchScope(territories=["US"])
         )
-        DatabaseStore.save_claims(claims)
+        repo.save_claims(claims)
         project.active_revision_id = revision_id
-        DatabaseStore.save_project(project)
+        repo.save_project(project)
         return {
             "revision": revision,
             "claims": claims,
@@ -166,39 +169,31 @@ async def upload_script(project_id: str, draft_label: str, file: UploadFile = Fi
 # 4. Human Disposition Recording Route
 @app.post("/api/claims/{claim_id}/disposition")
 def record_disposition(claim_id: str, req: DispositionRequest):
+    repo = get_repository()
     # Find active claims with this claim ID
-    conn = sqlite3.connect(DatabaseStore.db_path if hasattr(DatabaseStore, "db_path") else os.path.join(os.path.dirname(__file__), "obstat.db"))
-    cursor = conn.cursor()
-    cursor.execute("SELECT claim_id, item_id, item_string, item_type, revision_id, state, outcome, scope, queries, search_ids, evidence, created_at FROM claims WHERE claim_id = ?", (claim_id,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Claim not found")
-        
-    claim = Claim(
-        claim_id=row[0],
-        item_id=row[1],
-        item_string=row[2],
-        item_type=ItemType(row[3]),
-        revision_id=row[4],
-        state=ClaimState(row[5]),
-        outcome=ResearchOutcome(row[6]),
-        scope=ResearchScope(**json.loads(row[7])),
-        queries=json.loads(row[8]),
-        search_ids=json.loads(row[9]),
-        evidence=json.loads(row[10]),
-        human_disposition=HumanDisposition(req.human_disposition),
-        disposition_note=req.disposition_note,
-        created_at=row[11]
-    )
-    conn.close()
-    DatabaseStore.save_claims([claim])
+    claims_list = []
+    # Find active revisions across the repository context to extract claim mapping
+    projects_list = repo.list_projects()
+    for proj in projects_list:
+        if proj.active_revision_id:
+            rev_claims = repo.get_claims_for_revision(proj.active_revision_id)
+            for c in rev_claims:
+                if c.claim_id == claim_id:
+                    claims_list.append(c)
+
+    if not claims_list:
+         raise HTTPException(status_code=404, detail="Claim not found")
+         
+    claim = claims_list[0]
+    claim.human_disposition = HumanDisposition(req.human_disposition)
+    claim.disposition_note = req.disposition_note
+    repo.save_claims([claim])
     return claim
 
 # 5. Resolve / Name Alternative Generation & Research Workflow
 @app.post("/api/claims/{claim_id}/resolve_alternatives")
 def resolve_alternatives(claim_id: str, req: AlternativeResolutionRequest):
-    # Search the alternative name through real Parallel API
+    repo = get_repository()
     search_service = ParallelSearchService()
     classifier = GeminiClassifier()
     
@@ -234,7 +229,7 @@ def resolve_alternatives(claim_id: str, req: AlternativeResolutionRequest):
     else:
         outcome = ResearchOutcome.INSUFFICIENT_COVERAGE
 
-    DatabaseStore.save_alternative(
+    repo.save_alternative(
         claim_id=claim_id,
         original_name="",
         alternative_name=req.alternative_name,
@@ -249,9 +244,11 @@ def resolve_alternatives(claim_id: str, req: AlternativeResolutionRequest):
 
 @app.get("/api/claims/{claim_id}/alternatives")
 def get_claim_alternatives(claim_id: str):
-    return DatabaseStore.get_alternatives(claim_id)
+    repo = get_repository()
+    return repo.get_alternatives(claim_id)
 
 # 6. Egress Compliance Logs
 @app.get("/api/assurance/egress_logs")
 def get_egress_logs():
-    return DatabaseStore.get_egress_logs()
+    repo = get_repository()
+    return repo.get_egress_logs()

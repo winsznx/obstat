@@ -2,7 +2,7 @@ import re
 import datetime
 from typing import List, Dict, Any
 from app.models.clearance_record import ItemType
-from app.services.db_store import DatabaseStore
+from app.services.db_provider import get_repository
 
 class OutboundQuery:
     def __init__(self, query_string: str, item_id: str, item_type: ItemType, token_provenance: List[str]):
@@ -47,6 +47,8 @@ class ProvenanceEgressFirewall:
         item_tokens = set(item_string.lower().split())
         provenance = []
 
+        repo = get_repository()
+
         try:
             for token in tokens:
                 cleaned = token.strip('",.:;')
@@ -63,7 +65,7 @@ class ProvenanceEgressFirewall:
                     )
             
             # Save allowed egress log to database persistence
-            DatabaseStore.save_egress_log(
+            repo.save_egress_log(
                 query=query_text,
                 allowed=True,
                 provenance=provenance,
@@ -72,7 +74,7 @@ class ProvenanceEgressFirewall:
             )
 
         except EgressViolation as e:
-            DatabaseStore.save_egress_log(
+            repo.save_egress_log(
                 query=query_text,
                 allowed=False,
                 provenance=["VIOLATION"],

@@ -34,15 +34,15 @@ class RevisionInvalidationEngine:
                 current_item = current_item_map[key]
                 
                 # Check occurrence context & scene IDs to differentiate UNCHANGED vs MOVED vs MODIFIED
-                # Match against prior occurrences or evidence sources
-                prior_scene_ids = {o.scene_id for o in prior_claim.evidence} if prior_claim.evidence else set()
+                # Match against prior occurrences stored directly on the claim
+                prior_scene_ids = {o.scene_id for o in prior_claim.occurrences} if prior_claim.occurrences else set()
                 current_scene_ids = {o.scene_id for o in current_item.occurrences}
                 
-                prior_snippets = {o.excerpt.strip() for o in prior_claim.evidence} if prior_claim.evidence else set()
+                prior_snippets = {o.context_snippet.strip() for o in prior_claim.occurrences} if prior_claim.occurrences else set()
                 current_snippets = {o.context_snippet.strip() for o in current_item.occurrences}
 
-                # If no evidence is stored yet or it is identical, we retain the claim mapping
-                if not prior_claim.evidence or (prior_scene_ids == current_scene_ids and prior_snippets == current_snippets):
+                # If no occurrences are stored yet or they are identical, we retain the claim mapping
+                if not prior_claim.occurrences or (prior_scene_ids == current_scene_ids and prior_snippets == current_snippets):
                     retained_claim = prior_claim.model_copy(deep=True)
                     retained_claim.revision_id = current_revision_id
                     retained_claim.state = ClaimState.ACTIVE
@@ -81,7 +81,8 @@ class RevisionInvalidationEngine:
                     revision_id=current_revision_id,
                     state=ClaimState.ACTIVE,
                     outcome=ResearchOutcome.INSUFFICIENT_COVERAGE,
-                    scope=prior_claims[0].scope if prior_claims else None
+                    scope=prior_claims[0].scope if prior_claims else None,
+                    occurrences=item.occurrences
                 )
                 updated_claims.append(new_claim)
                 new_count += 1

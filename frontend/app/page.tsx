@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, ChevronRight, Search, PlusCircle
+  FileText, ChevronRight, Search, PlusCircle, Globe, FileCheck, Layers, Key
 } from 'lucide-react';
 
 interface EvidenceRecord {
@@ -19,6 +19,15 @@ interface EvidenceRecord {
   is_usable: boolean;
 }
 
+interface Occurrence {
+  revision_id: string;
+  scene_id: string;
+  page_number: number;
+  line_offset: number;
+  occurrence_text: string;
+  context_snippet: string;
+}
+
 interface Claim {
   claim_id: string;
   item_id: string;
@@ -30,6 +39,7 @@ interface Claim {
   queries: string[];
   search_ids: string[];
   evidence: EvidenceRecord[];
+  occurrences: Occurrence[];
   human_disposition?: string;
   disposition_note?: string;
   created_at: string;
@@ -281,9 +291,13 @@ export default function Workspace() {
       return false;
     }
     if (filterType === 'ALL') return true;
-    if (filterType === 'STALE' && c.state === 'STALE_SCRIPT') return true;
-    if (filterType === 'MATCH_FOUND' && c.outcome === 'MATCH_FOUND') return true;
-    if (filterType === 'NO_MATCH' && c.outcome === 'NO_MATCH_FOUND_IN_SCOPE') return true;
+    if (filterType === 'NEEDS_RESEARCH') return c.outcome === 'INSUFFICIENT_COVERAGE';
+    if (filterType === 'MATCH_FOUND') return c.outcome === 'MATCH_FOUND';
+    if (filterType === 'NO_MATCH') return c.outcome === 'NO_MATCH_FOUND_IN_SCOPE';
+    if (filterType === 'AMBIGUOUS') return c.outcome === 'AMBIGUOUS_MATCH';
+    if (filterType === 'STALE') return c.state === 'STALE_SCRIPT';
+    if (filterType === 'NEEDS_DISPOSITION') return !c.human_disposition && c.outcome === 'MATCH_FOUND';
+    if (filterType === 'RESOLVED') return !!c.human_disposition;
     return c.outcome === filterType;
   });
 
@@ -411,9 +425,16 @@ export default function Workspace() {
                 <p className="text-xs text-[#666666] mt-0.5">Click highlighted terms to view clearance plans and evidence.</p>
               </div>
 
-              {loading ? (
-                <div className="p-6 text-center text-xs font-mono text-[#666666]">
-                  Running ADK Extraction & Real-time Parallel Search...
+              {!activeProject ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <Layers className="h-12 w-12 text-[#999999] mb-4 animate-pulse" />
+                  <p className="text-sm font-bold text-[#181925]">No production selected</p>
+                  <p className="text-xs text-[#666666] mt-1">Create a production in the left menu to start screenplay clearances.</p>
+                </div>
+              ) : loading ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <div className="h-8 w-8 border-4 border-t-[#918df6] border-r-transparent border-b-[#918df6] border-l-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-xs font-mono text-[#666666]">Running ADK Extraction & Parallel Search...</p>
                 </div>
               ) : rawText ? (
                 <pre className="whitespace-pre-wrap font-mono text-xs text-[#333333] leading-relaxed max-w-2xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 overflow-x-auto shadow-sm">
@@ -448,7 +469,7 @@ export default function Workspace() {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                   <FileText className="h-12 w-12 text-[#999999] mb-4" />
-                  <p className="text-sm font-bold text-[#181925]">No screenplay uploaded yet</p>
+                  <p className="text-sm font-bold text-[#181925]">Upload first screenplay</p>
                   <p className="text-xs text-[#666666] mt-1">Upload a script revision in the left timeline to begin continuous clearance control.</p>
                 </div>
               )}
@@ -471,6 +492,22 @@ export default function Workspace() {
                   </div>
 
                   <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                    <div>
+                      <h4 className="text-[10px] font-mono text-[#999999] uppercase tracking-wider mb-2">Occurrences Context</h4>
+                      <div className="space-y-1.5">
+                        {selectedClaim.occurrences?.map((oc, i) => (
+                          <div key={i} className="bg-[#fafafa] border border-[#e8e8e8] rounded-lg p-2.5 text-xs">
+                            <div className="flex justify-between text-[10px] text-[#666666] mb-1">
+                              <span>Scene {oc.scene_id}</span>
+                              <span>Page {oc.page_number}</span>
+                            </div>
+                            <p className="font-bold text-[#181925]">&quot;{oc.occurrence_text}&quot;</p>
+                            <p className="text-[10px] text-[#666666] italic mt-1">Snippet: {oc.context_snippet}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="bg-[#fafafa] p-4 rounded-xl border border-[#e8e8e8]">
                       <h4 className="text-[10px] font-mono text-[#999999] uppercase tracking-wider">Research Outcome</h4>
                       <p className={`text-base font-bold mt-1 ${selectedClaim.outcome === 'MATCH_FOUND' ? 'text-[#ffa600]' : 'text-[#33c758]'}`}>
@@ -482,6 +519,29 @@ export default function Workspace() {
                         <p className="text-xs text-[#666666] mt-1">No matches found in target scope.</p>
                       )}
                     </div>
+
+                    {selectedClaim.evidence.length > 0 && (
+                      <div>
+                        <h4 className="text-[10px] font-mono text-[#999999] uppercase tracking-wider mb-2">Evidence Documentation</h4>
+                        <div className="space-y-3">
+                          {selectedClaim.evidence.map((ev, i) => (
+                            <div key={i} className="bg-white border border-[#e8e8e8] rounded-xl p-3.5 shadow-sm text-xs">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-bold text-[#181925] truncate max-w-[160px]">{ev.title}</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${ev.evidence_label === 'EXACT_MATCH' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
+                                  {ev.evidence_label}
+                                </span>
+                              </div>
+                              <p className="text-[#666666] leading-relaxed">{ev.excerpt}</p>
+                              <a href={ev.url} target="_blank" rel="noreferrer" className="flex items-center text-[10px] text-[#918df6] mt-2 font-semibold">
+                                <Globe className="h-3 w-3 mr-1" />
+                                {ev.domain}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-4 border-t border-[#e8e8e8]">
                       <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-2">Resolve / Find Alternatives</h4>
@@ -547,13 +607,13 @@ export default function Workspace() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mt-3">
-                      {['ALL', 'STALE', 'MATCH_FOUND', 'NO_MATCH'].map((f) => (
+                      {['ALL', 'NEEDS_RESEARCH', 'MATCH_FOUND', 'NO_MATCH', 'AMBIGUOUS', 'STALE', 'NEEDS_DISPOSITION', 'RESOLVED'].map((f) => (
                         <button
                           key={f}
                           onClick={() => setFilterType(f)}
                           className={`px-2.5 py-1 rounded text-[10px] font-mono border ${filterType === f ? 'bg-[#918df6] text-white border-[#918df6]' : 'bg-[#fafafa] text-[#666666] border-[#e8e8e8] hover:bg-[#f5f5f5]'}`}
                         >
-                          {f}
+                          {f.replace(/_/g, ' ')}
                         </button>
                       ))}
                     </div>
@@ -596,37 +656,57 @@ export default function Workspace() {
                 <h2 className="text-xl font-bold text-[#181925]">Script Clearance Research Packet</h2>
                 <p className="text-xs text-[#666666] mt-0.5">Verification status of active script revisions.</p>
               </div>
-              <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border ${packetComplete ? 'bg-[#def6e4] text-[#33c758] border-[#33c758]' : 'bg-[#fff8e6] text-[#ffa600] border-[#ffa600]'}`}>
-                {packetComplete ? 'RESEARCH PACKET COMPLETE' : 'RESEARCH PACKET BLOCKED'}
-              </span>
+              {claims.length > 0 ? (
+                <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border ${packetComplete ? 'bg-[#def6e4] text-[#33c758] border-[#33c758]' : 'bg-[#fff8e6] text-[#ffa600] border-[#ffa600]'}`}>
+                  {packetComplete ? 'RESEARCH PACKET COMPLETE' : 'RESEARCH PACKET BLOCKED'}
+                </span>
+              ) : (
+                <span className="px-4 py-1.5 rounded-full text-xs font-semibold border bg-gray-100 text-gray-500">
+                  NO RESEARCH PACKET YET
+                </span>
+              )}
             </div>
 
-            <div className="max-w-4xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 space-y-6">
-              <div className="border-b border-[#e8e8e8] pb-4">
-                <h3 className="text-lg font-bold text-[#181925]">{activeProject?.title}</h3>
-                <p className="text-xs text-[#666666] mt-1 font-mono">Revision ID: {activeRevisionId || 'No active revision'}</p>
-              </div>
+            {claims.length > 0 ? (
+              <div className="max-w-4xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 space-y-6">
+                <div className="border-b border-[#e8e8e8] pb-4 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#181925]">{activeProject?.title}</h3>
+                    <p className="text-xs text-[#666666] mt-1 font-mono">Revision ID: {activeRevisionId || 'No active revision'}</p>
+                  </div>
+                  <div className="text-right text-xs">
+                    <p className="text-[#666666] font-semibold">Incremental Run Lineage Provenance</p>
+                    <p className="text-[#999999] mt-0.5">Retained searches saved: {claims.filter(c => c.state === 'ACTIVE').length}</p>
+                  </div>
+                </div>
 
-              <div className="space-y-4">
-                <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider">Claims Ledger</h4>
-                <div className="divide-y divide-[#e8e8e8]">
-                  {claims.map((claim) => (
-                    <div key={claim.claim_id} className="py-3 flex justify-between items-center text-xs">
-                      <div>
-                        <span className="font-bold text-[#181925]">{claim.item_string}</span>
-                        <span className="text-[10px] text-[#666666] ml-2">({claim.item_type})</span>
+                <div className="space-y-4">
+                  <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider">Claims Ledger</h4>
+                  <div className="divide-y divide-[#e8e8e8]">
+                    {claims.map((claim) => (
+                      <div key={claim.claim_id} className="py-3 flex justify-between items-center text-xs">
+                        <div>
+                          <span className="font-bold text-[#181925]">{claim.item_string}</span>
+                          <span className="text-[10px] text-[#666666] ml-2">({claim.item_type})</span>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className="font-mono text-[#999999]">{claim.state}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${claim.outcome === 'MATCH_FOUND' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
+                            {claim.outcome}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <span className="font-mono text-[#999999]">{claim.state}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${claim.outcome === 'MATCH_FOUND' ? 'bg-[#fff8e6] text-[#ffa600]' : 'bg-[#def6e4] text-[#33c758]'}`}>
-                          {claim.outcome}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="max-w-4xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+                <FileCheck className="h-12 w-12 text-[#999999] mb-4" />
+                <p className="text-sm font-bold text-[#181925]">No research packet yet</p>
+                <p className="text-xs text-[#666666] mt-1">Upload the first screenplay revision to begin research packet audits.</p>
+              </div>
+            )}
           </section>
         )}
 
@@ -638,36 +718,65 @@ export default function Workspace() {
               <p className="text-xs text-[#666666] mt-0.5">Auditable logs, model definitions, and Egress Firewall provenance metrics.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 flex flex-col h-[500px]">
-                <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-4">Outbound Query Egress Logs</h3>
-                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                  {egressLogs.map((log, idx) => (
-                    <div key={idx} className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-3.5 text-xs font-mono">
-                      <div className="flex justify-between items-start">
-                        <span className={log.allowed ? 'text-[#33c758]' : 'text-red-500'}>
-                          {log.allowed ? 'ALLOWED_EGRESS' : 'EGRESS_BLOCKED'}
-                        </span>
-                        <span className="text-[10px] text-[#999999]">{log.timestamp.slice(11, 19)}</span>
-                      </div>
-                      <p className="text-[#181925] mt-1.5 font-bold">{log.query}</p>
-                      <p className="text-[10px] text-[#666666] mt-1">Provenance: {log.provenance.join(', ')}</p>
-                    </div>
-                  ))}
-                </div>
+            {!activeProject ? (
+              <div className="flex-1 bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+                <Key className="h-12 w-12 text-[#999999] mb-4" />
+                <p className="text-sm font-bold text-[#181925]">No active production run</p>
+                <p className="text-xs text-[#666666] mt-1">Assurance logs are run-scoped. Select or upload a screenplay to inspect audit trail.</p>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 flex flex-col h-[500px]">
+                  <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-4">Outbound Query Egress Logs</h3>
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                    {egressLogs.map((log, idx) => (
+                      <div key={idx} className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-3.5 text-xs font-mono">
+                        <div className="flex justify-between items-start">
+                          <span className={log.allowed ? 'text-[#33c758]' : 'text-red-500'}>
+                            {log.allowed ? 'ALLOWED_EGRESS' : 'EGRESS_BLOCKED'}
+                          </span>
+                          <span className="text-[10px] text-[#999999]">{log.timestamp.slice(11, 19)}</span>
+                        </div>
+                        <p className="text-[#181925] mt-1.5 font-bold">{log.query}</p>
+                        <p className="text-[10px] text-[#666666] mt-1">Provenance: {log.provenance.join(', ')}</p>
+                      </div>
+                    ))}
+                    {egressLogs.length === 0 && (
+                      <p className="text-xs text-[#666666] text-center py-12">No egress audits recorded for this run.</p>
+                    )}
+                  </div>
+                </div>
 
-              <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 space-y-6">
-                <div>
-                  <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Model Configuration</h3>
-                  <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-4 text-xs space-y-2">
-                    <p><span className="font-semibold text-[#666666]">Google Model:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">gemini-2.5-flash</code></p>
-                    <p><span className="font-semibold text-[#666666]">Enterprise Vertex Route:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">GOOGLE_GENAI_USE_ENTERPRISE=True</code></p>
-                    <p><span className="font-semibold text-[#666666]">Region Location:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">us-central1</code></p>
+                <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 space-y-6">
+                  <div>
+                    <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Model Configuration</h3>
+                    <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-4 text-xs space-y-2">
+                      <p><span className="font-semibold text-[#666666]">Google Model:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">gemini-2.5-flash</code></p>
+                      <p><span className="font-semibold text-[#666666]">Enterprise Vertex Route:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">GOOGLE_GENAI_USE_ENTERPRISE=True</code></p>
+                      <p><span className="font-semibold text-[#666666]">Region Location:</span> <code className="bg-[#f5f5f5] px-1 py-0.5 rounded font-mono">us-central1</code></p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Claim Lineage Context</h3>
+                    <div className="bg-[#ffffff] border border-[#e8e8e8] rounded-xl p-4 text-xs font-mono space-y-1.5">
+                      <div className="flex justify-between">
+                        <span className="text-[#666666]">Active Revision:</span>
+                        <span>{activeRevisionId || 'None'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#666666]">Claims Count:</span>
+                        <span>{claims.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#666666]">Incremental Run saving:</span>
+                        <span>{claims.filter(c => c.state === 'ACTIVE').length} hits saved</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </section>
         )}
       </div>

@@ -91,7 +91,7 @@ class ParallelQueryResult(BaseModel):
     title: str
     excerpt: str
     domain: str
-    retrieved_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
+    retrieved_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
 class EvidenceRecord(BaseModel):
     evidence_id: str
@@ -118,10 +118,11 @@ class Claim(BaseModel):
     queries: List[str] = Field(default_factory=list)
     search_ids: List[str] = Field(default_factory=list)
     evidence: List[EvidenceRecord] = Field(default_factory=list)
+    occurrences: List[Occurrence] = Field(default_factory=list)  # Backed by occurrences history for valid diff comparison
     human_disposition: Optional[HumanDisposition] = None
     disposition_note: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
 class Revision(BaseModel):
     revision_id: str
@@ -130,13 +131,13 @@ class Revision(BaseModel):
     draft_label: str
     file_name: str
     sha256: str
-    created_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
     total_scenes: int = 0
     total_pages: int = 0
 
 class Project(BaseModel):
     project_id: str
     title: str
-    created_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
     default_scope: ResearchScope = Field(default_factory=ResearchScope)
     active_revision_id: Optional[str] = None

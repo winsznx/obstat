@@ -2,19 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, ShieldCheck, ClipboardList, Activity, GitCommit, HelpCircle, 
-  ChevronRight, AlertTriangle, CheckCircle, Search, ExternalLink, Archive,
-  PlusCircle, RefreshCw, Send, ArrowRight
+  FileText, ChevronRight, Search, PlusCircle
 } from 'lucide-react';
-
-interface Occurrence {
-  revision_id: string;
-  scene_id: string;
-  page_number: number;
-  line_offset: number;
-  occurrence_text: string;
-  context_snippet: string;
-}
 
 interface EvidenceRecord {
   evidence_id: string;
@@ -79,10 +68,11 @@ interface Alternative {
   evidence: EvidenceRecord[];
 }
 
+type TabType = 'workspace' | 'packet' | 'assurance';
+
 const API_BASE = 'http://localhost:8000';
 
 export default function Workspace() {
-  // Navigation states
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [revisions, setRevisions] = useState<Revision[]>([]);
@@ -90,31 +80,21 @@ export default function Workspace() {
   const [rawText, setRawText] = useState<string>('');
   const [claims, setClaims] = useState<Claim[]>([]);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  
-  // Work Queue states
-  const [activeTab, setActiveTab] = useState<'workspace' | 'packet' | 'assurance'>('workspace');
+  const [activeTab, setActiveTab] = useState<TabType>('workspace');
   const [filterType, setFilterType] = useState<string>('ALL');
-
-  // Input states
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [draftLabel, setDraftLabel] = useState('Draft 12');
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Resolution/Alternatives states
   const [altInput, setAltInput] = useState('');
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [altLoading, setAltLoading] = useState(false);
-
-  // Assurance states
   const [egressLogs, setEgressLogs] = useState<EgressLog[]>([]);
 
-  // 1. Initial Load of Projects
   useEffect(() => {
     fetchProjects();
   }, []);
 
-  // 2. Load Revisions & Egress Log updates
   useEffect(() => {
     if (activeProject) {
       fetchRevisions(activeProject.project_id);
@@ -147,7 +127,7 @@ export default function Workspace() {
         }
       }
     } catch (err) {
-      console.error('API Server Offline', err);
+      console.error(err);
     }
   };
 
@@ -158,7 +138,9 @@ export default function Workspace() {
         const data = await res.json();
         setRevisions(data);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchRevisionDetails = async (revId: string) => {
@@ -169,7 +151,9 @@ export default function Workspace() {
         setRawText(data.raw_text);
         setClaims(data.claims);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchEgressLogs = async () => {
@@ -179,7 +163,9 @@ export default function Workspace() {
         const data = await res.json();
         setEgressLogs(data);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -200,7 +186,9 @@ export default function Workspace() {
         setRawText('');
         setClaims([]);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleUploadScript = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,11 +228,12 @@ export default function Workspace() {
         if (activeRevisionId) {
           fetchRevisionDetails(activeRevisionId);
         }
-        // Update selectedClaim reference
         const updatedClaim = await res.json();
         setSelectedClaim(updatedClaim);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleResolveAlternatives = async () => {
@@ -261,6 +250,7 @@ export default function Workspace() {
         fetchAlternatives(selectedClaim.claim_id);
       }
     } catch (err) {
+      console.error(err);
     } finally {
       setAltLoading(false);
     }
@@ -273,7 +263,9 @@ export default function Workspace() {
         const data = await res.json();
         setAlternatives(data);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -284,7 +276,6 @@ export default function Workspace() {
     }
   }, [selectedClaim]);
 
-  // Filtered clearance queue calculation
   const filteredClaims = claims.filter(c => {
     if (searchQuery && !c.item_string.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -300,7 +291,6 @@ export default function Workspace() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-[#181925] font-sans antialiased flex flex-col">
-      {/* 1. Nav Header */}
       <header className="border-b border-[#e8e8e8] bg-[#ffffff] sticky top-0 z-50 px-8 py-3.5 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-6">
           <div className="h-9 w-9 rounded-full bg-[#918df6] flex items-center justify-center font-bold text-white shadow-sm">
@@ -316,7 +306,6 @@ export default function Workspace() {
           </div>
         </div>
 
-        {/* Global Tab Navigation */}
         <div className="flex space-x-1 bg-[#f5f5f5] p-1 rounded-full border border-[#e8e8e8]">
           <button 
             onClick={() => setActiveTab('workspace')}
@@ -339,9 +328,7 @@ export default function Workspace() {
         </div>
       </header>
 
-      {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Drawer - Productions and Revision Timeline */}
         <aside className="w-80 border-r border-[#e8e8e8] bg-[#ffffff] p-6 flex flex-col space-y-6 overflow-y-auto">
           <div>
             <h2 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Productions</h2>
@@ -418,17 +405,19 @@ export default function Workspace() {
 
         {activeTab === 'workspace' && (
           <div className="flex-1 flex overflow-hidden">
-            {/* Center Area: Script Screenplay view */}
             <section className="flex-1 border-r border-[#e8e8e8] bg-[#ffffff] p-8 overflow-y-auto flex flex-col">
               <div className="border-b border-[#e8e8e8] pb-4 mb-6">
                 <h2 className="text-sm font-bold text-[#181925]">Active Screenplay Review</h2>
                 <p className="text-xs text-[#666666] mt-0.5">Click highlighted terms to view clearance plans and evidence.</p>
               </div>
 
-              {rawText ? (
+              {loading ? (
+                <div className="p-6 text-center text-xs font-mono text-[#666666]">
+                  Running ADK Extraction & Real-time Parallel Search...
+                </div>
+              ) : rawText ? (
                 <pre className="whitespace-pre-wrap font-mono text-xs text-[#333333] leading-relaxed max-w-2xl bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-8 overflow-x-auto shadow-sm">
                   {rawText.split('\n').map((line, idx) => {
-                    // Match extracted items and highlight them
                     let renderedLine: React.ReactNode = line;
                     for (const claim of claims) {
                       const regex = new RegExp(`\\b(${claim.item_string})\\b`, 'i');
@@ -465,10 +454,8 @@ export default function Workspace() {
               )}
             </section>
 
-            {/* Right Pane: Clearance Work Queue or Claim Inspector */}
             <section className="w-96 bg-[#ffffff] flex flex-col overflow-hidden">
               {selectedClaim ? (
-                // 1. Claim Inspector View
                 <div className="flex-1 flex flex-col overflow-hidden">
                   <div className="p-6 border-b border-[#e8e8e8] flex justify-between items-center bg-[#fafafa]">
                     <div>
@@ -484,7 +471,6 @@ export default function Workspace() {
                   </div>
 
                   <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-                    {/* Research Outcome */}
                     <div className="bg-[#fafafa] p-4 rounded-xl border border-[#e8e8e8]">
                       <h4 className="text-[10px] font-mono text-[#999999] uppercase tracking-wider">Research Outcome</h4>
                       <p className={`text-base font-bold mt-1 ${selectedClaim.outcome === 'MATCH_FOUND' ? 'text-[#ffa600]' : 'text-[#33c758]'}`}>
@@ -497,7 +483,6 @@ export default function Workspace() {
                       )}
                     </div>
 
-                    {/* Alternatives Resolution Workflow */}
                     <div className="pt-4 border-t border-[#e8e8e8]">
                       <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-2">Resolve / Find Alternatives</h4>
                       <div className="flex space-x-2 mb-3">
@@ -529,7 +514,6 @@ export default function Workspace() {
                       </div>
                     </div>
 
-                    {/* Human Disposition Selector */}
                     <div className="pt-4 border-t border-[#e8e8e8]">
                       <h4 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-2">Record Disposition</h4>
                       <div className="space-y-2">
@@ -547,12 +531,10 @@ export default function Workspace() {
                   </div>
                 </div>
               ) : (
-                // 2. Queue List View
                 <div className="flex-1 flex flex-col overflow-hidden">
                   <div className="p-6 border-b border-[#e8e8e8]">
                     <h3 className="font-bold text-base text-[#181925]">Clearance work queue</h3>
                     
-                    {/* Search Field */}
                     <div className="relative mt-3">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
                       <input
@@ -564,7 +546,6 @@ export default function Workspace() {
                       />
                     </div>
 
-                    {/* Queue Filter Tabs */}
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {['ALL', 'STALE', 'MATCH_FOUND', 'NO_MATCH'].map((f) => (
                         <button
@@ -658,7 +639,6 @@ export default function Workspace() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Egress Firewall Logs */}
               <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 flex flex-col h-[500px]">
                 <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-4">Outbound Query Egress Logs</h3>
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2">
@@ -677,7 +657,6 @@ export default function Workspace() {
                 </div>
               </div>
 
-              {/* Execution Provenance */}
               <div className="bg-[#fafafa] border border-[#e8e8e8] rounded-2xl p-6 space-y-6">
                 <div>
                   <h3 className="text-xs font-mono text-[#999999] uppercase tracking-wider mb-3">Model Configuration</h3>

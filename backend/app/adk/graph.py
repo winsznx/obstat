@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Dict, Any
 from app.models.clearance_record import (
-    ClearanceItem, Claim, ResearchScope, ResearchOutcome, ClaimState, ItemType, Occurrence
+    ClearanceItem, Claim, ResearchScope, ResearchOutcome, ClaimState, ItemType
 )
 from app.services.egress_firewall import ProvenanceEgressFirewall
 from app.services.parallel_service import ParallelSearchService
@@ -16,6 +16,7 @@ class ADKGraphOrchestrator:
 
     def __init__(self):
         self.parallel_service = ParallelSearchService()
+        self.classifier = GeminiClassifier()
 
     def process_items(
         self,
@@ -39,26 +40,36 @@ class ADKGraphOrchestrator:
                 scope_territory=scope.territories[0] if scope.territories else "US"
             )
 
-            # Step 2: Execute Parallel Search API
+            # Step 2: Execute Parallel Search API (api.parallel.ai)
             search_results = self.parallel_service.execute_search(
                 query=outbound_query.query_string,
                 session_id=session_id,
                 mode="fast"
             )
 
-            # Step 3: Classify Evidence
+            # Step 3: Classify Evidence with Verbatim Span Verification
             evidence_records = []
             for res in search_results:
-                ev = GeminiClassifier.classify_evidence(
+                ev = self.classifier.classify_evidence(
                     item=item,
                     excerpt=res.excerpt,
-                    title=res.title
+                    title=res.title,
+                    url=res.url,
+                    search_id=res.search_id,
+                    session_id=session_id
                 )
                 evidence_records.append(ev)
 
             # Step 4: Adjudicate Deterministic Outcome
-            has_match = any(e.evidence_label == "EXACT_MATCH" for e in evidence_records)
-            outcome = ResearchOutcome.MATCH_FOUND if has_match else ResearchOutcome.NO_MATCH_FOUND_IN_SCOPE
+            has_match = any(e.evidence_label == "EXACT_MATCH" and e.is_usable for e in evidence_records)
+            usable_evidence_count = sum(1 for e in evidence_records if e.is_usable)
+            
+            if has_match:
+                outcome = ResearchOutcome.MATCH_FOUND
+            elif usable_evidence_count > 0:
+                outcome = ResearchOutcome.NO_MATCH_FOUND_IN_SCOPE
+            else:
+                outcome = ResearchOutcome.INSUFFICIENT_COVERAGE
 
             claim = Claim(
                 claim_id=f"claim_{item.item_id}",

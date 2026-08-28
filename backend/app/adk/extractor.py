@@ -19,15 +19,15 @@ class GeminiExtractor:
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
     def get_client(self) -> genai.Client:
-        if self.use_vertex:
-            # Vertex AI path using ADC (Google Cloud credentials)
-            return genai.Client(vertexai=True, project=self.project, location=self.location)
-        elif self.api_key:
-            # AI Studio path using api key
-            return genai.Client(api_key=self.api_key)
-        else:
-            # Automatic ADC lookup fallback for general GCP environments
-            return genai.Client()
+        # Default to Vertex AI path in hackathon GCP account environment
+        import google.auth
+        credentials, _ = google.auth.default()
+        return genai.Client(
+            vertexai=True, 
+            project=self.project or 'project-2ac1d1fb-7da1-46b4-90e', 
+            location=self.location or 'us-central1',
+            credentials=credentials
+        )
 
     def extract_clearance_items(self, screenplay_text: str, revision_id: str) -> List[ClearanceItem]:
         client = self.get_client()

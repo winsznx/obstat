@@ -23,12 +23,14 @@ class GeminiClassifier:
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
     def get_client(self) -> genai.Client:
-        if self.use_vertex:
-            return genai.Client(vertexai=True, project=self.project, location=self.location)
-        elif self.api_key:
-            return genai.Client(api_key=self.api_key)
-        else:
-            return genai.Client()
+        import google.auth
+        credentials, _ = google.auth.default()
+        return genai.Client(
+            vertexai=True, 
+            project=self.project or 'project-2ac1d1fb-7da1-46b4-90e', 
+            location=self.location or 'us-central1',
+            credentials=credentials
+        )
 
     def classify_evidence(
         self,

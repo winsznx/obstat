@@ -3,6 +3,7 @@ import json
 import uuid
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -95,79 +96,87 @@ def get_revision_details(revision_id: str):
 # 3. Upload & Run Core ADK / Parallel Research Flow
 @app.post("/api/projects/{project_id}/upload_script")
 async def upload_script(project_id: str, draft_label: str, file: UploadFile = File(...)):
-    repo = get_repository()
-    project = repo.get_project(project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        repo = get_repository()
+        project = repo.get_project(project_id)
+        if not project:
+            return JSONResponse(status_code=404, content={"detail": f"Project '{project_id}' not found. Please refresh the page to reload projects."})
 
-    content = (await file.read()).decode("utf-8", errors="ignore")
-    parsed = ScreenplayParser.parse_text(content, title=file.filename)
-    
-    revision_id = f"rev_{uuid.uuid4().hex[:8]}"
-    revision = Revision(
-        revision_id=revision_id,
-        project_id=project_id,
-        title=parsed.title,
-        draft_label=draft_label,
-        file_name=file.filename,
-        sha256=parsed.sha256,
-        total_scenes=len(parsed.scenes),
-        total_pages=parsed.total_pages
-    )
-    
-    # Save revision metadata and text
-    repo.save_revision(revision, raw_text=content)
-
-    # Extract clearance items using Gemini model
-    extracted_items = extractor.extract_clearance_items(content, revision_id)
-
-    # Check for prior revision to run invalidation engine
-    if project.active_revision_id:
-        prior_claims = repo.get_claims_for_revision(project.active_revision_id)
-        updated_claims, metrics = RevisionInvalidationEngine.compute_revision_diff(
-            prior_claims=prior_claims,
-            current_items=extracted_items,
-            prior_revision_id=project.active_revision_id,
-            current_revision_id=revision_id
+        content = (await file.read()).decode("utf-8", errors="ignore")
+        parsed = ScreenplayParser.parse_text(content, title=file.filename)
+        
+        revision_id = f"rev_{uuid.uuid4().hex[:8]}"
+        revision = Revision(
+            revision_id=revision_id,
+            project_id=project_id,
+            title=parsed.title,
+            draft_label=draft_label,
+            file_name=file.filename,
+            sha256=parsed.sha256,
+            total_scenes=len(parsed.scenes),
+            total_pages=parsed.total_pages
         )
         
-        # Only re-research new or modified items
-        unresearched_items = [
-            item for item in extracted_items 
-            if not any(c.item_id == item.item_id and c.state == ClaimState.ACTIVE for c in updated_claims)
-        ]
-        
-        if unresearched_items:
-            new_claims = orchestrator.process_items(
+        # Save revision metadata and text
+        repo.save_revision(revision, raw_text=content)
+
+        # Extract clearance items using deterministic regex extractor
+        extracted_items = extractor.extract_clearance_items(content, revision_id)
+
+        # Check for prior revision to run invalidation engine
+        if project.active_revision_id:
+            prior_claims = repo.get_claims_for_revision(project.active_revision_id)
+            updated_claims, metrics = RevisionInvalidationEngine.compute_revision_diff(
+                prior_claims=prior_claims,
+                current_items=extracted_items,
+                prior_revision_id=project.active_revision_id,
+                current_revision_id=revision_id
+            )
+            
+            # Only re-research new or modified items
+            unresearched_items = [
+                item for item in extracted_items 
+                if not any(c.item_id == item.item_id and c.state == ClaimState.ACTIVE for c in updated_claims)
+            ]
+            
+            if unresearched_items:
+                new_claims = orchestrator.process_items(
+                    revision_id=revision_id,
+                    items=unresearched_items,
+                    scope=ResearchScope(territories=["US"])
+                )
+                updated_claims.extend(new_claims)
+
+            repo.save_claims(updated_claims)
+            project.active_revision_id = revision_id
+            repo.save_project(project)
+            return {
+                "revision": revision,
+                "claims": updated_claims,
+                "invalidation_metrics": metrics
+            }
+        else:
+            # First draft -> Run full ADK workflow graph with Parallel Search API
+            claims = orchestrator.process_items(
                 revision_id=revision_id,
-                items=unresearched_items,
+                items=extracted_items,
                 scope=ResearchScope(territories=["US"])
             )
-            updated_claims.extend(new_claims)
-
-        repo.save_claims(updated_claims)
-        project.active_revision_id = revision_id
-        repo.save_project(project)
-        return {
-            "revision": revision,
-            "claims": updated_claims,
-            "invalidation_metrics": metrics
-        }
-    else:
-        # First draft -> Run full ADK workflow graph with Parallel Search API
-        claims = orchestrator.process_items(
-            revision_id=revision_id,
-            items=extracted_items,
-            scope=ResearchScope(territories=["US"])
-        )
-        repo.save_claims(claims)
-        project.active_revision_id = revision_id
-        repo.save_project(project)
-        return {
-            "revision": revision,
-            "claims": claims,
-            "invalidation_metrics": {"retained_claims": len(claims), "invalidated_claims": 0, "new_claims": len(claims), "searches_saved": 0}
-        }
+            repo.save_claims(claims)
+            project.active_revision_id = revision_id
+            repo.save_project(project)
+            return {
+                "revision": revision,
+                "claims": claims,
+                "invalidation_metrics": {"retained_claims": len(claims), "invalidated_claims": 0, "new_claims": len(claims), "searches_saved": 0}
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[upload_script ERROR] {e}\n{tb}")
+        return JSONResponse(status_code=500, content={"detail": str(e), "traceback": tb})
 
 # 4. Human Disposition Recording Route
 @app.post("/api/claims/{claim_id}/disposition")

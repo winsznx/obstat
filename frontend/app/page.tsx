@@ -100,6 +100,7 @@ export default function Workspace() {
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [altLoading, setAltLoading] = useState(false);
   const [egressLogs, setEgressLogs] = useState<EgressLog[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -129,11 +130,21 @@ export default function Workspace() {
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
-        if (data.length > 0 && !activeProject) {
-          setActiveProject(data[0]);
-          if (data[0].active_revision_id) {
-            setActiveRevisionId(data[0].active_revision_id);
+        if (data.length > 0) {
+          // Validate current activeProject still exists in backend
+          const stillExists = activeProject
+            ? data.some((p: Project) => p.project_id === activeProject.project_id)
+            : false;
+          if (!stillExists) {
+            // Stale or no project — select first available and clear stale state
+            setActiveProject(data[0]);
+            setActiveRevisionId(data[0].active_revision_id ?? null);
+            setRawText('');
+            setClaims([]);
           }
+        } else {
+          setActiveProject(null);
+          setActiveRevisionId(null);
         }
       }
     } catch (err) {
@@ -206,6 +217,7 @@ export default function Workspace() {
     if (!file || !activeProject) return;
 
     setLoading(true);
+    setUploadError(null);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -227,8 +239,14 @@ export default function Workspace() {
         // 3. Force instant sidebar list reload and details fetch
         await fetchRevisions(activeProject.project_id);
         await fetchRevisionDetails(nextRevId);
+      } else {
+        const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        setUploadError(errData.detail || `Upload failed (${res.status})`);
+        // Refresh projects in case our active project is stale
+        await fetchProjects();
       }
     } catch (err) {
+      setUploadError(String(err));
       console.error(err);
     } finally {
       setLoading(false);
@@ -403,6 +421,9 @@ export default function Workspace() {
                   Upload Script Draft
                   <input type="file" onChange={handleUploadScript} className="hidden" accept=".txt,.fdx,.pdf" />
                 </label>
+                {uploadError && (
+                  <p className="text-[10px] text-red-500 px-1 leading-tight">{uploadError}</p>
+                )}
               </div>
 
               <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-3 before:w-0.5 before:bg-[#e8e8e8]">

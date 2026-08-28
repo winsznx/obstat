@@ -6,6 +6,9 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import dotenv
+dotenv.load_dotenv()
+
 from app.models.clearance_record import (
     Project, Revision, ClearanceItem, Claim, ResearchScope, ItemType, Occurrence, HumanDisposition, ClaimState, ResearchOutcome, EvidenceRecord
 )

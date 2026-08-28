@@ -216,9 +216,17 @@ export default function Workspace() {
       });
       if (res.ok) {
         const data = await res.json();
-        setActiveRevisionId(data.revision.revision_id);
-        fetchRevisions(activeProject.project_id);
-        fetchRevisionDetails(data.revision.revision_id);
+        const nextRevId = data.revision.revision_id;
+        
+        // 1. Immediately set active revision state
+        setActiveRevisionId(nextRevId);
+        
+        // 2. Proactively update activeProject state with the new active_revision_id
+        setActiveProject(prev => prev ? { ...prev, active_revision_id: nextRevId } : null);
+        
+        // 3. Force instant sidebar list reload and details fetch
+        await fetchRevisions(activeProject.project_id);
+        await fetchRevisionDetails(nextRevId);
       }
     } catch (err) {
       console.error(err);

@@ -29,8 +29,22 @@ class ADKGraphOrchestrator:
         session_id = f"sess_{uuid.uuid4().hex[:8]}"
 
         for item in items:
-            search_template = "official website business" if item.item_type == ItemType.BUSINESS_ORG else "location venue"
-            
+            # Map item type to a clean, approved search template
+            if item.item_type == ItemType.BUSINESS_ORG:
+                search_template = "official website business"
+            elif item.item_type == ItemType.VENUE_LOCATION:
+                search_template = "location venue"
+            elif item.item_type in (ItemType.CHARACTER_NAME, ItemType.PERSON_NAME):
+                search_template = "person name official"
+            elif item.item_type == ItemType.BRAND_PRODUCT:
+                search_template = "brand product trademark"
+            elif item.item_type == ItemType.MUSIC_REFERENCE:
+                search_template = "song music official"
+            elif item.item_type == ItemType.MEDIA_WORK:
+                search_template = "film media official"
+            else:
+                search_template = "official website business"
+
             # Step 1: Egress Firewall Check (Guarantees script privacy)
             outbound_query = ProvenanceEgressFirewall.validate_and_compile_query(
                 item_string=item.item_string,

@@ -4,10 +4,10 @@ from typing import List
 from app.models.clearance_record import ClearanceItem, ItemType, Occurrence
 
 
-# Known corporate/brand indicator suffixes
-CORP_SUFFIXES = re.compile(
-    r'\b(Inc\.?|LLC\.?|Ltd\.?|Corp\.?|Co\.?|Group|Studios?|Records?|Entertainment|Productions?|Media|Films?|Networks?|Brands?|Industries)\b',
-    re.IGNORECASE
+# Business/org name: requires a Title Case word before a corp suffix
+# so plain lowercase nouns like "vinyl record crates" don't match
+CORP_PREFIX = re.compile(
+    r'\b([A-Z][A-Za-z&\'\-]+(?:\s+[A-Z][A-Za-z&\'\-]+){0,4})\s+(?:Inc\.?|LLC\.?|Ltd\.?|Corp\.?|Co\.?|Group|Studios?|Records?|Entertainment|Productions?|Media|Films?|Networks?|Brands?|Industries)\b'
 )
 
 # Screenplay character cue: ALL CAPS line (optionally with (V.O.) / (O.S.))
@@ -103,15 +103,10 @@ class GeminiExtractor:
                     add_item(char_name, ItemType.CHARACTER_NAME, current_scene, page, line_num, char_name, snippet)
                 continue
 
-            # --- Business / org names anywhere in line ---
-            if CORP_SUFFIXES.search(line):
-                for m in CORP_SUFFIXES.finditer(line):
-                    start = max(0, m.start() - 40)
-                    window = line[start:m.end()].strip()
-                    words = window.split()
-                    if words:
-                        org_name = ' '.join(words[-min(5, len(words)):])
-                        add_item(org_name, ItemType.BUSINESS_ORG, current_scene, page, line_num, org_name, snippet)
+            # --- Business / org names anywhere in line (Title Case + corp suffix) ---
+            for m in CORP_PREFIX.finditer(line):
+                org_name = m.group(0).strip()
+                add_item(org_name, ItemType.BUSINESS_ORG, current_scene, page, line_num, org_name, snippet)
 
             # --- Inline ALL-CAPS proper nouns in action lines (e.g. "MERCER VALE") ---
             all_caps_words = re.findall(r'\b([A-Z]{2,}(?:\s+[A-Z]{2,})*)\b', line)

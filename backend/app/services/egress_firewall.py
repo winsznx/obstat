@@ -25,7 +25,7 @@ class ProvenanceEgressFirewall:
     
     ALLOWED_TEMPLATE_TOKENS = {
         "official", "website", "company", "corporation", "trademark", "registry",
-        "inc", "ltd", "brand", "product", "location", "restaurant", "hotel", "bar",
+        "inc", "ltd", "brand", "product", "location", "venue", "restaurant", "hotel", "bar",
         "menu", "address", "business", "song", "lyrics", "album", "movie", "film"
     }
 

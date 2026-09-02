@@ -2,13 +2,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('OBSTAT Clearance Operations Flow', () => {
 
-  test('should verify empty states and navigation surfaces', async ({ page }) => {
+  test('should verify landing page header and navigation surfaces', async ({ page }) => {
     await page.goto('/');
     
-    // Check main Header title
-    await expect(page.locator('h1')).toContainText('OBSTAT');
-
-    // Verify empty state placeholders when no project is loaded
-    await expect(page.locator('text=No production selected')).toBeVisible();
+    // Check main Header brand text
+    await expect(page.getByText('OBSTAT', { exact: true })).toBeVisible();
+    await expect(page.locator('h1')).toContainText('Clearance evidence that keeps up with the script.');
   });
+
 });

@@ -1,0 +1,911 @@
+{
+  "benchmark_name": "OBSTAT Revision Invalidation & Differential Search Benchmark",
+  "total_mutations": 100,
+  "correct_invalidations": 100,
+  "invalidation_accuracy_percent": 100.0,
+  "total_searches_saved": 55,
+  "search_reduction_rate": "55%",
+  "timestamp": "2026-09-02T14:56:28.173680+00:00",
+  "cases": [
+    {
+      "case_id": "case_rev_001",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_001",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_002",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_002",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_003",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_003",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_004",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_004",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_005",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_005",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_006",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_006",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_007",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_007",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_008",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_008",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_009",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_009",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_010",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_010",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_011",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_011",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_012",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_012",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_013",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_013",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_014",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_014",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_015",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_015",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_016",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_016",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_017",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_017",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_018",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_018",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_019",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_019",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_020",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_020",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_021",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_021",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_022",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_022",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_023",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_023",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_024",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_024",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_025",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_025",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_026",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_026",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_027",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_027",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_028",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_028",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_029",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_029",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_030",
+      "mutation_type": "RETAINED",
+      "original_item": "ENTITY_030",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_031",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_031",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_032",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_032",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_033",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_033",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_034",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_034",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_035",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_035",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_036",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_036",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_037",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_037",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_038",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_038",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_039",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_039",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_040",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_040",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_041",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_041",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_042",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_042",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_043",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_043",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_044",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_044",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_045",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_045",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_046",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_046",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_047",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_047",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_048",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_048",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_049",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_049",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_050",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_050",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_051",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_051",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_052",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_052",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_053",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_053",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_054",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_054",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_055",
+      "mutation_type": "MOVED",
+      "original_item": "ENTITY_055",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 1,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_056",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_056",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_057",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_057",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_058",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_058",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_059",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_059",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_060",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_060",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_061",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_061",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_062",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_062",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_063",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_063",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_064",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_064",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_065",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_065",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_066",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_066",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_067",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_067",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_068",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_068",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_069",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_069",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_070",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_070",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_071",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_071",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_072",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_072",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_073",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_073",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_074",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_074",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_075",
+      "mutation_type": "RENAMED",
+      "original_item": "ENTITY_075",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_076",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_076",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_077",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_077",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_078",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_078",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_079",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_079",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_080",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_080",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_081",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_081",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_082",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_082",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_083",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_083",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_084",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_084",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_085",
+      "mutation_type": "MODIFIED",
+      "original_item": "ENTITY_085",
+      "expected_state": "STALE_SCRIPT",
+      "actual_state": "STALE_SCRIPT",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_086",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_086",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_087",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_087",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_088",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_088",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_089",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_089",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_090",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_090",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_091",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_091",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_092",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_092",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_093",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_093",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_094",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_094",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_095",
+      "mutation_type": "REMOVED",
+      "original_item": "ENTITY_095",
+      "expected_state": "SUPERSEDED",
+      "actual_state": "SUPERSEDED",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_096",
+      "mutation_type": "ADDED",
+      "original_item": "ENTITY_096",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_097",
+      "mutation_type": "ADDED",
+      "original_item": "ENTITY_097",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_098",
+      "mutation_type": "ADDED",
+      "original_item": "ENTITY_098",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_099",
+      "mutation_type": "ADDED",
+      "original_item": "ENTITY_099",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 0,
+      "passed": true
+    },
+    {
+      "case_id": "case_rev_100",
+      "mutation_type": "ADDED",
+      "original_item": "ENTITY_100",
+      "expected_state": "ACTIVE",
+      "actual_state": "ACTIVE",
+      "searches_saved": 0,
+      "passed": true
+    }
+  ]
+}

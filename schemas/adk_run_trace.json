@@ -1,0 +1,95 @@
+{
+  "run_id": "adk_run_9babcae1",
+  "revision_id": "rev_proof_56158f",
+  "timestamp": "2026-09-02T15:16:43.777601+00:00",
+  "total_nodes": 2,
+  "nodes": [
+    {
+      "node_id": "extract_clearance_items",
+      "type": "AI_NODE",
+      "provider": "Vertex AI Gemini 2.5 Flash",
+      "duration_ms": 6611.41,
+      "items_extracted": [
+        "MERCER VALE",
+        "VELA RECORDS",
+        "MASTER CUT 1984"
+      ]
+    },
+    {
+      "node_id": "authorize_egress_and_parallel_search",
+      "type": "TOOL_GRAPH_NODE",
+      "provider": "Parallel Search API (api.parallel.ai/v1/search)",
+      "duration_ms": 8701.17,
+      "claims_generated": 3,
+      "search_ids": [
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_item_96e24e1d",
+      "item_string": "MERCER VALE",
+      "item_type": "CHARACTER_NAME",
+      "outcome": "INSUFFICIENT_COVERAGE",
+      "search_ids": [
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
+        "search_e4cefd89d50c2f1b33a74d7c3cddff9b"
+      ],
+      "evidence_count": 8
+    },
+    {
+      "claim_id": "claim_item_a76b0361",
+      "item_string": "VELA RECORDS",
+      "item_type": "BUSINESS_ORG",
+      "outcome": "INSUFFICIENT_COVERAGE",
+      "search_ids": [
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55",
+        "search_c5e145069d5fcecb0f52af17bd1f4b55"
+      ],
+      "evidence_count": 7
+    },
+    {
+      "claim_id": "claim_item_42a65926",
+      "item_string": "MASTER CUT 1984",
+      "item_type": "MUSIC_REFERENCE",
+      "outcome": "INSUFFICIENT_COVERAGE",
+      "search_ids": [
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e",
+        "search_c8db4acafd84962f239791417d21dd1e"
+      ],
+      "evidence_count": 4
+    }
+  ]
+}

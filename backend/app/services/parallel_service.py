@@ -1,8 +1,11 @@
 import os
 import json
+import time
 import uuid
 import datetime
 import requests
+import dotenv
+dotenv.load_dotenv()
 from typing import List, Optional, Dict, Any
 from app.models.clearance_record import ParallelQueryResult
 
@@ -14,7 +17,7 @@ class ParallelSearchService:
     """
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("PARALLEL_API_KEY")
+        self.api_key = api_key or os.getenv("PARALLEL_API_KEY") or "REVOKED_PARALLEL_CREDENTIAL"
 
     def execute_search(
         self,
@@ -39,10 +42,21 @@ class ParallelSearchService:
             "mode": mode,
             "objective": objective or f"Screenplay clearance research for entity: {query}"
         }
-        
-        resp = requests.post("https://api.parallel.ai/v1/search", json=payload, headers=headers, timeout=15)
-        if resp.status_code != 200:
-            raise RuntimeError(f"Parallel Search API call failed with status {resp.status_code}: {resp.text}")
+
+        resp = None
+        for attempt in range(3):
+            try:
+                resp = requests.post("https://api.parallel.ai/v1/search", json=payload, headers=headers, timeout=15)
+                if resp.status_code == 200:
+                    break
+            except Exception as e:
+                print(f"[ParallelSearchService] Attempt {attempt + 1} failed: {e}")
+                time.sleep(1.0 * (attempt + 1))
+
+        if not resp or resp.status_code != 200:
+            status_str = resp.status_code if resp else "NO_RESPONSE"
+            text_str = resp.text if resp else "Connection error"
+            raise RuntimeError(f"Parallel Search API call failed with status {status_str}: {text_str}")
 
         data = resp.json()
         results: List[ParallelQueryResult] = []

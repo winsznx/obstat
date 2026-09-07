@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { resolveApiBase } from '../app/page';
+import { resolveApiBase } from '../app/config';
 
 test.describe('Frontend API Configuration Fail-Closed Invariants', () => {
 

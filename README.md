@@ -41,15 +41,15 @@ graph TD
 
 ---
 
-## 📊 Measured Benchmark Evidence
-
-OBSTAT was evaluated across **200 controlled test cases**:
-
-| Campaign | Cases | Accuracy Rate | Key Findings |
+## 📊 Measured Policy Conformance Evidence
+ 
+OBSTAT was evaluated across **200 controlled test cases** (Reference Policy & Invariant Suite):
+ 
+| Campaign | Cases | Policy Conformance | Key Findings |
 |---|---|---|---|
-| **Evidence & Adjudication** | **100** | **100.0%** | 100% fail-closed compliance; zero false negative claims |
-| **Revision Invalidation** | **100** | **100.0%** | Retained 55% unchanged claims; 100% stale detection |
-
+| **Evidence & Adjudication** | **100** | **100.0%** | 100% fail-closed compliance; zero false negative claims under absence policy |
+| **Revision Invalidation** | **100** | **100.0%** | Retained 55% unchanged claims; 100% stale claim detection across mutations |
+ 
 See complete artifacts in `schemas/evidence_benchmark_results.json`, `schemas/revision_benchmark_results.json`, and `evidence/calibration_report.md`.
 
 ---

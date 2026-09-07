@@ -1,8 +1,10 @@
 # Deployment & Cloud Infrastructure Guide — OBSTAT
 
-## 1. Google Cloud Run Deployment
+> **Status:** `DEPLOYMENT_NOT_PROVEN` (Google Cloud Run target configuration; reproducible locally via Python 3.10+ / Node 18+).
 
-OBSTAT is packaged as a containerized microservice deployed to Google Cloud Run.
+## 1. Google Cloud Run Deployment (Target Architecture)
+
+OBSTAT is architected as a containerized microservice for Google Cloud Run.
 
 ### Build and Deploy Backend:
 ```bash

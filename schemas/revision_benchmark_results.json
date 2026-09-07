@@ -1,11 +1,12 @@
 {
-  "benchmark_name": "OBSTAT Revision Invalidation & Differential Search Benchmark",
+  "benchmark_name": "OBSTAT Revision Invalidation & Differential Search State Machine Benchmark",
+  "benchmark_type": "REFERENCE_POLICY_TEST",
   "total_mutations": 100,
   "correct_invalidations": 100,
-  "invalidation_accuracy_percent": 100.0,
+  "policy_conformance_rate_percent": 100.0,
   "total_searches_saved": 55,
   "search_reduction_rate": "55%",
-  "timestamp": "2026-09-02T14:56:28.173680+00:00",
+  "timestamp": "2026-09-07T12:48:02.969416+00:00",
   "cases": [
     {
       "case_id": "case_rev_001",

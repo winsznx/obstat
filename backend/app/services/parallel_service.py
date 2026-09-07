@@ -9,15 +9,19 @@ dotenv.load_dotenv()
 from typing import List, Optional, Dict, Any
 from app.models.clearance_record import ParallelQueryResult
 
+class ParallelCredentialMissingError(RuntimeError):
+    """Raised when PARALLEL_API_KEY is not configured in the runtime environment."""
+    pass
+
 class ParallelSearchService:
     """
     Direct Parallel Search API (https://api.parallel.ai/v1/search) client integration.
     Persists search_id, session_id, queries, mode, timing, domain, and raw excerpts.
-    Fails visibly when credentials or network calls fail in production mode.
+    Fails visibly with a named exception when credentials or network calls fail.
     """
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("PARALLEL_API_KEY") or "REVOKED_PARALLEL_CREDENTIAL"
+        self.api_key = api_key or os.getenv("PARALLEL_API_KEY")
 
     def execute_search(
         self,
@@ -31,7 +35,9 @@ class ParallelSearchService:
         retrieved_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         if not self.api_key:
-            raise ValueError("PARALLEL_API_KEY environment variable is missing. Real Parallel Search API call required.")
+            raise ParallelCredentialMissingError(
+                "PARALLEL_API_KEY environment variable is missing. Real Parallel Search API call cannot execute."
+            )
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

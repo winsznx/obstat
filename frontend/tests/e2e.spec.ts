@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('OBSTAT End-to-End Clearance Workflow', () => {
+test.describe('OBSTAT Deterministic Browser UI Workflow Suite (Controlled Fixture)', () => {
 
   test('Public Landing Page displays hero and interactive invalidation widget', async ({ page }) => {
     await page.goto('/');

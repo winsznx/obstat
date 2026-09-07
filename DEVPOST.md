@@ -2,8 +2,9 @@
 
 > **Tagline:** Continuous Clearance Evidence Control for Film & Television Productions  
 > **Track:** Parallel Track (Grounding & Search for Agentic Cinema)  
-> **Google Stack:** Google Cloud Platform, Gemini Enterprise Agent Platform, Vertex AI (`gemini-2.5-flash`), Google ADK 2.x, Firestore, Cloud Run  
+> **Google Stack:** Google Cloud Platform, Gemini Enterprise Agent Platform, Vertex AI (`gemini-2.5-flash`), Google ADK 2.x, Firestore, Cloud Run (Target Deployment Architecture)  
 > **Partner Substrate:** Parallel Search API (`api.parallel.ai/v1/search`)  
+> **Deployment Status:** `DEPLOYMENT_NOT_PROVEN` on live Cloud Run; 100% reproducible via documented local runner  
 > **GitHub Repository:** [https://github.com/winsznx/obstat.git](https://github.com/winsznx/obstat.git)  
 
 ---
@@ -40,14 +41,14 @@ graph TD
 
 ---
 
-## 📊 3. Measured Benchmark Proof (200 Controlled Cases)
+## 📊 3. Measured Policy Conformance Evidence (200 Controlled Cases)
 
-OBSTAT was evaluated across **200 controlled test cases**:
+OBSTAT was evaluated across **200 controlled test cases** (Reference Policy & Invariant Suite):
 
-| Campaign | Total Cases | Accuracy Rate | Key Outcome |
+| Campaign | Total Cases | Policy Conformance | Key Outcome |
 |---|---|---|---|
-| **Evidence & Adjudication** | **100** | **100.0%** | Zero false negative clearance claims; 100% fail-closed compliance |
-| **Revision Invalidation** | **100** | **100.0%** | 55.0% search call reduction; 100% stale claim detection |
+| **Evidence & Adjudication** | **100** | **100.0%** | Zero false negative clearance claims; 100% fail-closed policy compliance |
+| **Revision Invalidation** | **100** | **100.0%** | 55.0% differential search reduction; 100% stale claim detection across mutations |
 
 Raw machine-readable benchmark outputs are available in `schemas/evidence_benchmark_results.json` and `schemas/revision_benchmark_results.json`.
 
@@ -80,7 +81,7 @@ backend/venv/bin/python3 backend/tests/test_security_adversarial.py
 # 4. Run ADK Live Workflow Verification (Emits schemas/adk_run_trace.json)
 backend/venv/bin/python3 backend/tests/verify_adk_execution.py
 
-# 5. Run Playwright E2E Tests (4/4 Passed in 6.5s)
+# 5. Run Playwright Deterministic UI Workflow Tests (3/3 Passed)
 cd frontend && pnpm exec playwright test
 ```
 

@@ -45,8 +45,10 @@ orchestrator = ADKGraphOrchestrator()
 # Initialize Database & Seed Clean Production Showcases
 @app.on_event("startup")
 def startup_event():
-    repo = get_repository()
-    seed_default_productions(repo)
+    # Only automatically seed demo data if explicitly requested or in local development
+    if os.getenv("OBSTAT_MODE") != "PRODUCTION" and os.getenv("ALLOW_DEMO_SEED", "True") == "True":
+        repo = get_repository()
+        seed_default_productions(repo)
 
 class ProjectCreateRequest(BaseModel):
     title: str
@@ -443,29 +445,32 @@ def get_clearance_packet(revision_id: str):
 def get_egress_logs():
     repo = get_repository()
     logs = repo.get_egress_logs()
-    # If empty, provide verified sample audit logs
-    if not logs:
+    if not logs and os.getenv("OBSTAT_MODE") != "PRODUCTION":
+        # Controlled demonstration audit entries with explicit classification
         logs = [
             {
                 "query": "MERCER VALE person name official US",
                 "allowed": True,
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
-                "search_id": "search_69970096",
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                "search_id": "demo_audit_69970096",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "mode": "CONTROLLED_DEMO"
             },
             {
                 "query": "RECORD RECORDING STUDIO location venue US",
                 "allowed": True,
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
-                "search_id": "search_88fa1093",
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                "search_id": "demo_audit_88fa1093",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "mode": "CONTROLLED_DEMO"
             },
             {
                 "query": "VELA RECORDS official website business US",
                 "allowed": True,
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
-                "search_id": "search_88fa1094",
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                "search_id": "demo_audit_88fa1094",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "mode": "CONTROLLED_DEMO"
             }
         ]
     return logs

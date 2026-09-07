@@ -1,11 +1,12 @@
 {
-  "benchmark_name": "OBSTAT Evidence & Adjudication Calibration Benchmark",
+  "benchmark_name": "OBSTAT Deterministic Adjudication Policy & Fail-Closed Control Benchmark",
+  "benchmark_type": "REFERENCE_POLICY_TEST",
   "total_cases": 100,
   "passed_cases": 100,
-  "accuracy_rate_percent": 100.0,
+  "policy_conformance_rate_percent": 100.0,
   "average_latency_ms": 12.61,
   "fail_closed_compliance_rate": "100.0%",
-  "timestamp": "2026-09-02T14:56:28.170151+00:00",
+  "timestamp": "2026-09-07T12:48:02.964316+00:00",
   "cases": [
     {
       "case_id": "case_ev_001",
@@ -1006,7 +1007,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 16.84
+      "latency_ms": 16.93
     },
     {
       "case_id": "case_ev_092",
@@ -1017,7 +1018,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.16
+      "latency_ms": 13.31
     },
     {
       "case_id": "case_ev_093",
@@ -1028,7 +1029,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.13
+      "latency_ms": 13.25
     },
     {
       "case_id": "case_ev_094",
@@ -1039,7 +1040,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.46
+      "latency_ms": 13.24
     },
     {
       "case_id": "case_ev_095",
@@ -1050,7 +1051,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.4
+      "latency_ms": 13.22
     },
     {
       "case_id": "case_ev_096",
@@ -1061,7 +1062,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.43
+      "latency_ms": 13.2
     },
     {
       "case_id": "case_ev_097",
@@ -1072,7 +1073,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.22
+      "latency_ms": 13.21
     },
     {
       "case_id": "case_ev_098",
@@ -1083,7 +1084,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.21
+      "latency_ms": 13.24
     },
     {
       "case_id": "case_ev_099",
@@ -1094,7 +1095,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.12
+      "latency_ms": 13.23
     },
     {
       "case_id": "case_ev_100",
@@ -1105,7 +1106,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.17
+      "latency_ms": 13.26
     }
   ]
 }

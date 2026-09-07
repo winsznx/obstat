@@ -125,5 +125,18 @@ class SecurityAdversarialTestSuite(unittest.TestCase):
         prior_updated = next(c for c in updated_claims if c.item_string == "MERCER VALE")
         self.assertIn(prior_updated.state, (ClaimState.STALE_SCRIPT, ClaimState.SUPERSEDED))
 
+    def test_07_missing_credential_fail_closed(self):
+        """Missing PARALLEL_API_KEY environment variable raises named ParallelCredentialMissingError"""
+        from app.services.parallel_service import ParallelSearchService, ParallelCredentialMissingError
+        svc = ParallelSearchService(api_key=None)
+        # Ensure env var is absent for this test
+        orig_key = os.environ.pop("PARALLEL_API_KEY", None)
+        try:
+            with self.assertRaises(ParallelCredentialMissingError):
+                svc.execute_search("test query", "sess_fail_closed")
+        finally:
+            if orig_key:
+                os.environ["PARALLEL_API_KEY"] = orig_key
+
 if __name__ == "__main__":
     unittest.main()

@@ -46,3 +46,6 @@ build/
 .idea/
 *.swp
 *.swo
+
+# Local Audit Workspace
+.local-audit/

@@ -1,4 +1,7 @@
-# Technical Contributions & Integration Patterns — OBSTAT
+# Technical Reference Patterns & Reusable Architecture — OBSTAT
+
+> **Contribution Classification:** `Tier C: Local Reusable Architectural Pattern & Reference Blueprint`  
+> *Notice: These patterns represent production designs implemented and tested in this codebase. They have not been submitted as external pull requests to upstream repositories.*
 
 ## 1. Google ADK 2.x Egress Firewall Integration Pattern
 

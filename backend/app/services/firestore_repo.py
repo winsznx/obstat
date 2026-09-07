@@ -10,7 +10,7 @@ from app.services.repository import StorageRepository
 
 class FirestoreRepository(StorageRepository):
     def __init__(self):
-        project = os.getenv("GOOGLE_CLOUD_PROJECT", "project-2ac1d1fb-7da1-46b4-90e")
+        project = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT") or "project-2ac1d1fb-7da1-46b4-90e"
         self.db = firestore.Client(project=project)
 
     def save_project(self, project: Project) -> None:
@@ -124,6 +124,9 @@ class FirestoreRepository(StorageRepository):
                 "occurrences": json.dumps([oc.model_dump() for oc in claim.occurrences]),
                 "human_disposition": claim.human_disposition.value if claim.human_disposition else None,
                 "disposition_note": claim.disposition_note,
+                "adk_session_id": claim.adk_session_id,
+                "adk_invocation_id": claim.adk_invocation_id,
+                "adk_event_count": claim.adk_event_count,
                 "created_at": claim.created_at,
                 "updated_at": claim.updated_at
             })
@@ -149,6 +152,9 @@ class FirestoreRepository(StorageRepository):
                 occurrences=json.loads(data["occurrences"]) if data.get("occurrences") else [],
                 human_disposition=HumanDisposition(data["human_disposition"]) if data.get("human_disposition") else None,
                 disposition_note=data.get("disposition_note"),
+                adk_session_id=data.get("adk_session_id"),
+                adk_invocation_id=data.get("adk_invocation_id"),
+                adk_event_count=data.get("adk_event_count", 0),
                 created_at=data["created_at"],
                 updated_at=data["updated_at"]
             ))

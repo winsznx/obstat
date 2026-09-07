@@ -1,0 +1,6 @@
+node_modules/
+.next/
+test-results/
+.pnpm-store/
+playwright-report/
+blob-report/

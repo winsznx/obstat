@@ -59,10 +59,19 @@ class SQLiteRepository(StorageRepository):
             occurrences TEXT NOT NULL DEFAULT '[]',
             human_disposition TEXT,
             disposition_note TEXT,
+            adk_session_id TEXT,
+            adk_invocation_id TEXT,
+            adk_event_count INTEGER DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )
         """)
+
+        for col, col_type in [("adk_session_id", "TEXT"), ("adk_invocation_id", "TEXT"), ("adk_event_count", "INTEGER DEFAULT 0")]:
+            try:
+                cursor.execute(f"ALTER TABLE claims ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
         
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS egress_logs (
@@ -189,7 +198,7 @@ class SQLiteRepository(StorageRepository):
         cursor = conn.cursor()
         for claim in claims:
             cursor.execute(
-                "INSERT OR REPLACE INTO claims (claim_id, item_id, item_string, item_type, revision_id, state, outcome, scope, queries, search_ids, evidence, occurrences, human_disposition, disposition_note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO claims (claim_id, item_id, item_string, item_type, revision_id, state, outcome, scope, queries, search_ids, evidence, occurrences, human_disposition, disposition_note, adk_session_id, adk_invocation_id, adk_event_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     claim.claim_id,
                     claim.item_id,
@@ -205,6 +214,9 @@ class SQLiteRepository(StorageRepository):
                     json.dumps([oc.model_dump() for oc in claim.occurrences]),
                     claim.human_disposition.value if claim.human_disposition else None,
                     claim.disposition_note,
+                    claim.adk_session_id,
+                    claim.adk_invocation_id,
+                    claim.adk_event_count,
                     claim.created_at,
                     claim.updated_at
                 )
@@ -215,7 +227,7 @@ class SQLiteRepository(StorageRepository):
     def get_claims_for_revision(self, revision_id: str) -> List[Claim]:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT claim_id, item_id, item_string, item_type, revision_id, state, outcome, scope, queries, search_ids, evidence, occurrences, human_disposition, disposition_note, created_at, updated_at FROM claims WHERE revision_id = ?", (revision_id,))
+        cursor.execute("SELECT claim_id, item_id, item_string, item_type, revision_id, state, outcome, scope, queries, search_ids, evidence, occurrences, human_disposition, disposition_note, adk_session_id, adk_invocation_id, adk_event_count, created_at, updated_at FROM claims WHERE revision_id = ?", (revision_id,))
         rows = cursor.fetchall()
         conn.close()
         claims = []
@@ -235,8 +247,11 @@ class SQLiteRepository(StorageRepository):
                 occurrences=json.loads(row[11]) if row[11] else [],
                 human_disposition=HumanDisposition(row[12]) if row[12] else None,
                 disposition_note=row[13],
-                created_at=row[14],
-                updated_at=row[15]
+                adk_session_id=row[14],
+                adk_invocation_id=row[15],
+                adk_event_count=row[16] or 0,
+                created_at=row[17],
+                updated_at=row[18]
             ))
         return claims
 

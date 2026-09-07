@@ -1,95 +1,118 @@
 {
-  "run_id": "adk_run_9babcae1",
-  "revision_id": "rev_proof_56158f",
-  "timestamp": "2026-09-02T15:16:43.777601+00:00",
+  "run_id": "adk_run_7aa4ff23",
+  "revision_id": "rev_proof_2e634b",
+  "timestamp": "2026-09-07T20:54:10.006733+00:00",
+  "adk_framework": {
+    "package": "google-adk",
+    "version": "2.8.0",
+    "agent_name": "OBSTATClearanceResearchAgent",
+    "workflow_name": "OBSTATClearanceWorkflowGraph",
+    "agent_tools": [
+      "egress_authorize_tool",
+      "parallel_search_tool",
+      "evidence_classification_tool"
+    ],
+    "runner_type": "InMemoryRunner",
+    "session_service_type": "InMemorySessionService",
+    "total_events_emitted": 19
+  },
   "total_nodes": 2,
   "nodes": [
     {
       "node_id": "extract_clearance_items",
       "type": "AI_NODE",
       "provider": "Vertex AI Gemini 2.5 Flash",
-      "duration_ms": 6611.41,
+      "duration_ms": 9907.83,
       "items_extracted": [
         "MERCER VALE",
         "VELA RECORDS",
-        "MASTER CUT 1984"
+        "VELA RECORDS - MASTER CUT 1984"
       ]
     },
     {
       "node_id": "authorize_egress_and_parallel_search",
       "type": "TOOL_GRAPH_NODE",
       "provider": "Parallel Search API (api.parallel.ai/v1/search)",
-      "duration_ms": 8701.17,
+      "duration_ms": 3973.83,
       "claims_generated": 3,
       "search_ids": [
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e"
+        "search_20bc482149cb85e878ff943a0ec4a540",
+        "search_20bc482149cb85e878ff943a0ec4a540",
+        "search_20bc482149cb85e878ff943a0ec4a540",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f"
       ]
     }
   ],
   "claims": [
     {
-      "claim_id": "claim_item_96e24e1d",
+      "claim_id": "claim_item_9e5ee30a",
       "item_string": "MERCER VALE",
       "item_type": "CHARACTER_NAME",
       "outcome": "INSUFFICIENT_COVERAGE",
       "search_ids": [
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b",
-        "search_e4cefd89d50c2f1b33a74d7c3cddff9b"
+        "search_20bc482149cb85e878ff943a0ec4a540",
+        "search_20bc482149cb85e878ff943a0ec4a540",
+        "search_20bc482149cb85e878ff943a0ec4a540"
       ],
-      "evidence_count": 8
+      "evidence_count": 3,
+      "adk_session_id": "adk_sess_c63cde0fd876",
+      "adk_invocation_id": "e-f7282a1d-1e49-4641-8ebb-d94f895d0e3d",
+      "adk_event_count": 6
     },
     {
-      "claim_id": "claim_item_a76b0361",
+      "claim_id": "claim_item_897c8acf",
       "item_string": "VELA RECORDS",
       "item_type": "BUSINESS_ORG",
       "outcome": "INSUFFICIENT_COVERAGE",
       "search_ids": [
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55",
-        "search_c5e145069d5fcecb0f52af17bd1f4b55"
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa",
+        "search_bff5602362a186635617c8b62e00c8fa"
       ],
-      "evidence_count": 7
+      "evidence_count": 6,
+      "adk_session_id": "adk_sess_c63cde0fd876",
+      "adk_invocation_id": "e-f7282a1d-1e49-4641-8ebb-d94f895d0e3d",
+      "adk_event_count": 6
     },
     {
-      "claim_id": "claim_item_42a65926",
-      "item_string": "MASTER CUT 1984",
-      "item_type": "MUSIC_REFERENCE",
+      "claim_id": "claim_item_e1bae40e",
+      "item_string": "VELA RECORDS - MASTER CUT 1984",
+      "item_type": "BRAND_PRODUCT",
       "outcome": "INSUFFICIENT_COVERAGE",
       "search_ids": [
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e",
-        "search_c8db4acafd84962f239791417d21dd1e"
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f",
+        "search_57df26e19537e3ae384cf31f28d2358f"
       ],
-      "evidence_count": 4
+      "evidence_count": 10,
+      "adk_session_id": "adk_sess_c63cde0fd876",
+      "adk_invocation_id": "e-f7282a1d-1e49-4641-8ebb-d94f895d0e3d",
+      "adk_event_count": 6
     }
   ]
 }

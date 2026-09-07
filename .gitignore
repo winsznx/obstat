@@ -49,3 +49,7 @@ build/
 
 # Local Audit Workspace
 .local-audit/
+
+# Databases
+*.db
+*.sqlite

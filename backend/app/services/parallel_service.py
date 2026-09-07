@@ -21,7 +21,8 @@ class ParallelSearchService:
     """
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("PARALLEL_API_KEY")
+        raw_key = api_key or os.getenv("PARALLEL_API_KEY") or ""
+        self.api_key = raw_key.strip() if raw_key else None
 
     def execute_search(
         self,

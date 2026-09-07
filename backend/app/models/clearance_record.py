@@ -121,6 +121,9 @@ class Claim(BaseModel):
     occurrences: List[Occurrence] = Field(default_factory=list)  # Backed by occurrences history for valid diff comparison
     human_disposition: Optional[HumanDisposition] = None
     disposition_note: Optional[str] = None
+    adk_session_id: Optional[str] = None
+    adk_invocation_id: Optional[str] = None
+    adk_event_count: int = 0
     created_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 

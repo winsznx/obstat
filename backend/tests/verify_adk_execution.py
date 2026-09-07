@@ -81,7 +81,10 @@ He examines a demo tape labeled "VELA RECORDS - MASTER CUT 1984".
             "version": getattr(adk, "__version__", "2.8.0"),
             "agent_name": orchestrator.adk_agent.name,
             "workflow_name": orchestrator.adk_workflow.name,
-            "agent_tools": [t.__name__ for t in orchestrator.adk_agent.tools]
+            "agent_tools": [getattr(t, "name", getattr(t, "__name__", str(t))) for t in orchestrator.adk_agent.tools],
+            "runner_type": type(orchestrator.adk_runner).__name__,
+            "session_service_type": type(orchestrator.adk_runner.session_service).__name__,
+            "total_events_emitted": len(orchestrator.last_execution_events)
         },
         "total_nodes": len(node_traces),
         "nodes": node_traces,
@@ -92,7 +95,10 @@ He examines a demo tape labeled "VELA RECORDS - MASTER CUT 1984".
                 "item_type": c.item_type.value,
                 "outcome": c.outcome.value,
                 "search_ids": c.search_ids,
-                "evidence_count": len(c.evidence)
+                "evidence_count": len(c.evidence),
+                "adk_session_id": c.adk_session_id,
+                "adk_invocation_id": c.adk_invocation_id,
+                "adk_event_count": c.adk_event_count
             } for c in persisted_claims
         ]
     }

@@ -8,3 +8,4 @@ requests>=2.31.0
 pytest>=8.0.0
 google-adk>=2.8.0
 google-cloud-firestore>=2.15.0
+google-cloud-secret-manager>=2.18.0

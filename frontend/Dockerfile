@@ -15,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Production build requires NEXT_PUBLIC_API_BASE at build time to validate fail-closed configuration
-ARG NEXT_PUBLIC_API_BASE
+ARG NEXT_PUBLIC_API_BASE=https://obstat-backend-586563372673.us-central1.run.app
 ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 ENV NODE_ENV=production
 

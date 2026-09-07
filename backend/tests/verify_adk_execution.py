@@ -71,10 +71,18 @@ He examines a demo tape labeled "VELA RECORDS - MASTER CUT 1984".
     persisted_claims = repo.get_claims_for_revision(revision_id)
     print(f"  Step 4: Read back {len(persisted_claims)} claims from database repository.")
 
+    import google.adk as adk
     trace_payload = {
         "run_id": run_id,
         "revision_id": revision_id,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "adk_framework": {
+            "package": "google-adk",
+            "version": getattr(adk, "__version__", "2.8.0"),
+            "agent_name": orchestrator.adk_agent.name,
+            "workflow_name": orchestrator.adk_workflow.name,
+            "agent_tools": [t.__name__ for t in orchestrator.adk_agent.tools]
+        },
         "total_nodes": len(node_traces),
         "nodes": node_traces,
         "claims": [

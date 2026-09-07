@@ -1315,7 +1315,7 @@ export default function App() {
 
           {/* Printable Packet Document Container */}
           {packetLoading ? (
-            <div className="text-center py-20 text-xs text-[#999999]">Loading official legal clearance packet...</div>
+            <div className="text-center py-20 text-xs text-[#999999]">Loading clearance research packet...</div>
           ) : (
             <div className="bg-white border border-[#e8e8e8] rounded-2xl p-8 shadow-sm space-y-8 print-page">
               {/* Packet Header */}

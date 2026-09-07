@@ -96,20 +96,20 @@ The canonical demonstration script (*The Starlight Heist*) is pre-loaded:
 1. **Explore Locked Draft 12 (`/` or `/app`):**
    - Click **"Workspace"**.
    - Notice character `MERCER VALE` (Character Name) is marked **Active** with complete verification evidence.
-   - Toggle to **"Research Packet"** (`/app/packet`): the legal packet status displays **COMPLETE** with a valid SHA-256 integrity seal.
+   - Toggle to **"Research Packet"** (`/app/packet`): the clearance research packet status displays **COMPLETE** with a valid SHA-256 integrity seal for counsel review.
 2. **Execute Invalidation on Draft 13 (`/app/revision_diff`):**
    - In Draft 13, the writer renames `MERCER VALE` to record label `MERCER VALE RECORDS`.
    - Click **"Revision Invalidation"**:
      - Visual side-by-side diff highlights unchanged items in green (**Retained**, 0 API cost).
-     - The renamed character is instantly invalidated and marked orange (`STALE_SCRIPT`).
-     - **Saved Queries Metric:** 55% query reduction.
-3. **Inspect the Legal Clearance Packet (`/app/packet`):**
-   - The packet status is now **BLOCKED** because stale claims cannot silently survive script revision.
+     - The renamed character's prior claim is invalidated because its script context no longer matches, marked orange (`STALE_SCRIPT`).
+     - **Saved Queries Metric:** 55% query reduction on the controlled revision benchmark.
+3. **Inspect the Clearance Research Packet (`/app/packet`):**
+   - The research packet status is now **BLOCKED** because stale claims cannot silently survive script revision.
 4. **Trigger Targeted Incremental Research (`/app`):**
    - Re-research the new entity `MERCER VALE RECORDS`.
    - Parallel Search executes targeted live search; Gemini classifies verbatim match spans.
    - Record counsel disposition (`PROCEED_PER_COUNSEL`).
-   - The packet unblocks and returns to **COMPLETE**.
+   - The research packet unblocks and returns to **COMPLETE**.
 
 ---
 

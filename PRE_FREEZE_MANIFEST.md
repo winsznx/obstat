@@ -1,7 +1,7 @@
-# OBSTAT — FINAL FREEZE MANIFEST
-**Freeze Date:** 2026-09-07  
-**Freeze Commit SHA:** `8caa64e`  
-**Repository Branch:** `main`  
+# OBSTAT — PRE-FREEZE MANIFEST
+> **STATUS: PRE-FREEZE / NOT SUBMISSION FROZEN**  
+> Operational gates (remote push, Google ADK package integration, fail-closed production invariants) are actively verified below. Final submission freeze will execute only after competitive strengthening and live hosted proof completion.  
+**Snapshot Date:** 2026-09-07  
 **Target Submission Track:** Google Cloud Agentic Cinema: The Blockbuster Hackathon (Parallel Track)  
 **Primary Repository:** `https://github.com/winsznx/obstat.git`
 

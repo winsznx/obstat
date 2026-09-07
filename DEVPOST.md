@@ -14,8 +14,8 @@
 In entertainment production, script clearance is a legal nightmare. A single script revision—renaming a character, changing a record label, or adding a brand—invalidates previous clearance reports. Production lawyers waste hundreds of hours manually re-researching identical entities or missing newly introduced legal risks.
 
 **OBSTAT solves this forever.** By binding live web search evidence directly to screenplay line offsets, OBSTAT transforms clearance into continuous change control:
-- **Change the script**, and OBSTAT instantly retains valid evidence for unchanged claims (saving 55%+ of API searches).
-- **Rename or alter an entity**, and OBSTAT automatically revokes stale evidence, blocks the legal research packet, and executes targeted incremental research via the Parallel Search API.
+- **Change the script**, and OBSTAT instantly retains valid evidence for unchanged claims (saving 55% of queries on the controlled revision benchmark).
+- **Rename or alter an entity**, and OBSTAT automatically invalidates stale evidence, blocks the clearance research packet, and executes targeted incremental research via the Parallel Search API.
 
 ---
 
@@ -35,7 +35,7 @@ graph TD
 ```
 
 ### Key Technical Innovations:
-1. **Google ADK 2.x Graph Workflow**: Seamlessly coordinates Vertex AI Gemini 2.5 Flash for entity extraction with Python governance nodes for policy enforcement.
+1. **Google ADK 2.x Graph Workflow**: Instantiates genuine `google.adk.Agent` and `google.adk.Workflow` primitives, coordinating Vertex AI Gemini 2.5 Flash for entity extraction with deterministic governance tools for policy enforcement.
 2. **Provenance Egress Firewall**: Protects unreleased screenplay IP by guaranteeing that no raw script dialogue or plot context ever leaves GCP. Outbound search queries are compiled using strict token whitelists (`ITEM_TOKEN`, `TEMPLATE_TOKEN`, `SCOPE_TOKEN`).
 3. **Fail-Closed Evidence Policy**: Zero usable search results = `INSUFFICIENT_COVERAGE`. OBSTAT refuses to make false negative claims or issue "clean" reports based on thin web data.
 
@@ -48,7 +48,7 @@ OBSTAT was evaluated across **200 controlled test cases** (Reference Policy & In
 | Campaign | Total Cases | Policy Conformance | Key Outcome |
 |---|---|---|---|
 | **Evidence & Adjudication** | **100** | **100.0%** | Zero false negative clearance claims; 100% fail-closed policy compliance |
-| **Revision Invalidation** | **100** | **100.0%** | 55.0% differential search reduction; 100% stale claim detection across mutations |
+| **Revision Invalidation** | **100** | **100.0%** | 55.0% differential search reduction on the controlled benchmark; 100% stale claim detection across mutations |
 
 Raw machine-readable benchmark outputs are available in `schemas/evidence_benchmark_results.json` and `schemas/revision_benchmark_results.json`.
 
@@ -60,7 +60,7 @@ Raw machine-readable benchmark outputs are available in `schemas/evidence_benchm
 - **[0:35 - 1:15] Onboarding & Screenplay Workspace**: Open the Onboarding Wizard (`Start a Production`). Select production scope (US + Global Theatrical & Streaming). Navigate to the three-column screenplay review workspace (`/app`).
 - **[1:15 - 2:00] Claim Inspector & Parallel Search**: Click on `VELA RECORDS`. Point out the **Decision Summary Card** explaining why it matched `velarecords.com`. Click **Research Alternatives** to show live candidate generation and Parallel Search execution.
 - **[2:00 - 2:30] Revision Invalidation Engine**: Switch to `/app/revision_diff`. Show side-by-side diff between Draft 12 and Draft 13. Point out 3 Retained Claims (zero search cost) vs 1 Stale Claim (`MERCER VALE RECORDS`).
-- **[2:30 - 3:00] Legal Packet & Assurance Audit**: Open `/app/packet`. Show the official Script Clearance Research Packet with SHA-256 integrity hash. Navigate to `/app/assurance` to show the real-time Egress Audit Log proving zero script text left GCP.
+- **[2:30 - 3:00] Research Packet & Assurance Audit**: Open `/app/packet`. Show the Script Clearance Research Packet with SHA-256 integrity hash. Navigate to `/app/assurance` to show the real-time Egress Audit Log proving zero script text left GCP.
 
 ---
 

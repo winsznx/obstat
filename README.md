@@ -10,11 +10,11 @@ Built for the **Google Cloud Agentic Cinema: The Blockbuster Hackathon** (Parall
 
 ## 🌟 Primary Product Surfaces
 
-- **Public Product Landing Page (`/`)**: Product thesis, interactive Draft 12 ➔ Draft 13 invalidation visual widget, 3-stage clearance problem breakdown, 6-step lifecycle architecture, 100-case calibration proof summary, and official legal packet preview.
+- **Public Product Landing Page (`/`)**: Product thesis, interactive Draft 12 ➔ Draft 13 invalidation visual widget, 3-stage clearance problem breakdown, 6-step lifecycle architecture, 100-case calibration proof summary, and clearance research packet preview.
 - **First-Run Onboarding Wizard**: Guided production creation, distribution scope configuration (Country, Territories: US/UK/CA/EU, Media), and screenplay upload.
 - **Three-Pane Clearance Workspace (`/app`)**: Screenplay viewer formatted with Courier Prime screenplay typography, state-aware semantic item highlighting (Mint Green for `NO_MATCH_FOUND_IN_SCOPE`, Amber for `INSUFFICIENT_COVERAGE`, Red for `MATCH_FOUND`, Orange for `STALE_SCRIPT`), Decision Summary Card, collapsible Unusable Evidence, Query Provenance Inspector, and **Interactive Alternative Research via Parallel Search API**.
 - **Revision Invalidation Engine (`/app/revision_diff`)**: Side-by-side Draft N vs. Draft N+1 comparison showing retained claims, stale claims, searches saved, and eliminated latency.
-- **Script Clearance Research Packet (`/app/packet`)**: Printable, downloadable legal clearance report with SHA-256 integrity signatures and JSON evidence package export.
+- **Script Clearance Research Packet (`/app/packet`)**: Printable, downloadable clearance research report with SHA-256 integrity signatures and JSON evidence package export for counsel review.
 - **Assurance & Egress Governance (`/app/assurance`)**: Real-time egress audit log of all outbound search queries leaving GCP with token provenance classification.
 
 ---
@@ -48,7 +48,7 @@ OBSTAT was evaluated across **200 controlled test cases** (Reference Policy & In
 | Campaign | Cases | Policy Conformance | Key Findings |
 |---|---|---|---|
 | **Evidence & Adjudication** | **100** | **100.0%** | 100% fail-closed compliance; zero false negative claims under absence policy |
-| **Revision Invalidation** | **100** | **100.0%** | Retained 55% unchanged claims; 100% stale claim detection across mutations |
+| **Revision Invalidation** | **100** | **100.0%** | Retained 55% unchanged claims (55% query reduction on the controlled revision benchmark); 100% stale claim detection across mutations |
  
 See complete artifacts in `schemas/evidence_benchmark_results.json`, `schemas/revision_benchmark_results.json`, and `evidence/calibration_report.md`.
 

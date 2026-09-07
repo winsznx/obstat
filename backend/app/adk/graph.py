@@ -38,7 +38,7 @@ class ADKGraphOrchestrator:
             return {
                 "authorized": True,
                 "query_string": outbound_query.query_string,
-                "tokens": outbound_query.token_count
+                "tokens": len(outbound_query.token_provenance)
             }
 
         def parallel_search_tool(query_string: str, session_id: str) -> List[Dict[str, Any]]:

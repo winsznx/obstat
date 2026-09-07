@@ -138,5 +138,42 @@ class SecurityAdversarialTestSuite(unittest.TestCase):
             if orig_key:
                 os.environ["PARALLEL_API_KEY"] = orig_key
 
+    def test_08_production_extraction_fails_closed(self):
+        """In PRODUCTION mode, malformed or failed extraction must raise SemanticExtractionError rather than fallback to heuristic parsing."""
+        from app.adk.extractor import GeminiExtractor, SemanticExtractionError
+        from unittest.mock import patch, MagicMock
+
+        extractor = GeminiExtractor()
+        orig_mode = os.environ.get("OBSTAT_MODE")
+        os.environ["OBSTAT_MODE"] = "PRODUCTION"
+
+        try:
+            # Case 1: Model exception must raise SemanticExtractionError
+            with patch.object(extractor, 'get_client') as mock_client:
+                mock_model = MagicMock()
+                mock_model.generate_content.side_effect = RuntimeError("Vertex AI rate limit or connection failure")
+                mock_client.return_value.models = mock_model
+
+                with self.assertRaises(SemanticExtractionError) as ctx:
+                    extractor.extract_clearance_items("INT. OFFICE - DAY\nJOHN enters.", "rev_test")
+                self.assertIn("Fail-closed policy strictly prohibits heuristic regex fallback", str(ctx.exception))
+
+            # Case 2: Malformed structured output (missing 'items' key) must raise SemanticExtractionError
+            with patch.object(extractor, 'get_client') as mock_client:
+                mock_model = MagicMock()
+                mock_resp = MagicMock()
+                mock_resp.text = '{"malformed": "output"}'
+                mock_model.generate_content.return_value = mock_resp
+                mock_client.return_value.models = mock_model
+
+                with self.assertRaises(SemanticExtractionError) as ctx:
+                    extractor.extract_clearance_items("INT. OFFICE - DAY\nJOHN enters.", "rev_test")
+                self.assertIn("missing 'items' key", str(ctx.exception))
+        finally:
+            if orig_mode is None:
+                os.environ.pop("OBSTAT_MODE", None)
+            else:
+                os.environ["OBSTAT_MODE"] = orig_mode
+
 if __name__ == "__main__":
     unittest.main()

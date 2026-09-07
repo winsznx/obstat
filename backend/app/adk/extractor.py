@@ -39,6 +39,10 @@ Return ONLY valid JSON matching this schema:
 }
 """
 
+class SemanticExtractionError(RuntimeError):
+    """Raised when semantic entity extraction fails or returns malformed structured output in production mode."""
+    pass
+
 class GeminiExtractor:
     """
     Google ADK & Gemini Screenplay Clearance Semantic Extractor.
@@ -71,6 +75,7 @@ class GeminiExtractor:
         # 1. Invoke Vertex AI Gemini for semantic entity extraction
         extracted_entities: List[Dict[str, str]] = []
         t0 = time.time()
+        is_production = os.getenv("OBSTAT_MODE") == "PRODUCTION"
 
         try:
             client = self.get_client()
@@ -87,15 +92,30 @@ class GeminiExtractor:
 
             if response.text:
                 parsed_json = json.loads(response.text)
+                if not isinstance(parsed_json, dict) or "items" not in parsed_json:
+                    raise SemanticExtractionError(
+                        f"Malformed structured response from Gemini: missing 'items' key. Text: {response.text[:200]}"
+                    )
                 extracted_entities = parsed_json.get("items", [])
                 print(f"[GeminiExtractor] Vertex AI extracted {len(extracted_entities)} entities in {time.time()-t0:.2f}s")
+            else:
+                raise SemanticExtractionError("Empty response body received from Gemini extraction model.")
         except Exception as e:
             print(f"[GeminiExtractor ERROR] Vertex AI extraction failed: {e}")
-            # If Vertex AI call fails, parse structure safely
+            if is_production:
+                raise SemanticExtractionError(
+                    f"Production semantic extraction failed: {e}. "
+                    "Fail-closed policy strictly prohibits heuristic regex fallback in PRODUCTION mode."
+                ) from e
             extracted_entities = []
 
-        # Fallback / Supplemental Structural Anchors if Gemini returned sparse results
+        # Fallback / Supplemental Structural Anchors if Gemini returned sparse results (DEVELOPER/DEMO MODE ONLY)
         if not extracted_entities:
+            if is_production:
+                raise SemanticExtractionError(
+                    "Production extraction yielded 0 entities from model. "
+                    "Fail-closed policy strictly prohibits heuristic fallback in PRODUCTION mode."
+                )
             extracted_entities = self._fallback_rule_extraction(screenplay_text)
 
         # 2. Anchor extracted items to exact screenplay scene IDs, page numbers, line offsets

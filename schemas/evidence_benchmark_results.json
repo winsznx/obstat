@@ -4,9 +4,9 @@
   "total_cases": 100,
   "passed_cases": 100,
   "policy_conformance_rate_percent": 100.0,
-  "average_latency_ms": 12.6,
+  "average_latency_ms": 12.61,
   "fail_closed_compliance_rate": "100.0%",
-  "timestamp": "2026-09-07T19:16:58.360772+00:00",
+  "timestamp": "2026-09-08T11:51:42.533771+00:00",
   "cases": [
     {
       "case_id": "case_ev_001",
@@ -1007,7 +1007,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 14.43
+      "latency_ms": 15.02
     },
     {
       "case_id": "case_ev_092",
@@ -1018,7 +1018,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.63
+      "latency_ms": 13.53
     },
     {
       "case_id": "case_ev_093",
@@ -1029,7 +1029,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.37
+      "latency_ms": 13.3
     },
     {
       "case_id": "case_ev_094",
@@ -1040,7 +1040,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.34
+      "latency_ms": 13.29
     },
     {
       "case_id": "case_ev_095",
@@ -1051,7 +1051,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.41
+      "latency_ms": 13.28
     },
     {
       "case_id": "case_ev_096",
@@ -1062,7 +1062,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.35
+      "latency_ms": 13.26
     },
     {
       "case_id": "case_ev_097",
@@ -1073,7 +1073,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.25
+      "latency_ms": 13.23
     },
     {
       "case_id": "case_ev_098",
@@ -1084,7 +1084,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.26
+      "latency_ms": 13.72
     },
     {
       "case_id": "case_ev_099",
@@ -1095,7 +1095,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.3
+      "latency_ms": 13.5
     },
     {
       "case_id": "case_ev_100",
@@ -1106,7 +1106,7 @@
       "actual_outcome": "POLICY_BLOCKED",
       "usable_evidence_count": 0,
       "passed": true,
-      "latency_ms": 13.56
+      "latency_ms": 13.49
     }
   ]
 }

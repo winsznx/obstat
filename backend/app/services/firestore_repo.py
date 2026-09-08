@@ -88,7 +88,7 @@ class FirestoreRepository(StorageRepository):
         }
 
     def get_project_revisions(self, project_id: str) -> List[Revision]:
-        docs = self.db.collection("revisions").where("project_id", "==", project_id).order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+        docs = self.db.collection("revisions").where("project_id", "==", project_id).stream()
         revisions = []
         for doc in docs:
             data = doc.to_dict()
@@ -103,6 +103,7 @@ class FirestoreRepository(StorageRepository):
                 total_scenes=data["total_scenes"],
                 total_pages=data["total_pages"]
             ))
+        revisions.sort(key=lambda r: r.created_at or "", reverse=True)
         return revisions
 
     def save_claims(self, claims: List[Claim]) -> None:
@@ -127,6 +128,7 @@ class FirestoreRepository(StorageRepository):
                 "adk_session_id": claim.adk_session_id,
                 "adk_invocation_id": claim.adk_invocation_id,
                 "adk_event_count": claim.adk_event_count,
+                "invalidation_reason": claim.invalidation_reason,
                 "created_at": claim.created_at,
                 "updated_at": claim.updated_at
             })
@@ -152,6 +154,7 @@ class FirestoreRepository(StorageRepository):
                 occurrences=json.loads(data["occurrences"]) if data.get("occurrences") else [],
                 human_disposition=HumanDisposition(data["human_disposition"]) if data.get("human_disposition") else None,
                 disposition_note=data.get("disposition_note"),
+                invalidation_reason=data.get("invalidation_reason"),
                 adk_session_id=data.get("adk_session_id"),
                 adk_invocation_id=data.get("adk_invocation_id"),
                 adk_event_count=data.get("adk_event_count", 0),

@@ -31,7 +31,7 @@ class ScreenplayParser:
         lines = text.splitlines()
         scenes: List[ParsedScene] = []
         
-        scene_pattern = re.compile(r'^\s*(?:INT\.|EXT\.|INT/EXT\.|EXT/INT\.)\s+(.+)', re.IGNORECASE)
+        scene_pattern = re.compile(r'^\s*(?:(?:SCENE\s+\d+|[0-9]+)\s*[-:.]\s*)?(?:INT\.|EXT\.|INT/EXT\.|EXT/INT\.)\s+(.+)', re.IGNORECASE)
         
         current_scene_header = "START / PROLOGUE"
         current_scene_lines = []

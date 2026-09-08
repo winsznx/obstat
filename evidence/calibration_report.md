@@ -1,6 +1,6 @@
 # OBSTAT Deterministic Policy Conformance & Invariant Verification Report
 
-> **Generated:** 2026-09-07 19:16 UTC
+> **Generated:** 2026-09-08 11:51 UTC
 > **Suite Status:** PASSED (100/100 Policy Conformance Control Cases, 100/100 Revision Invalidation Mutation Cases)
 > **Evaluation Class:** REFERENCE / DETERMINISTIC STATE-MACHINE VERIFICATION (NOT Live Web Ground Truth)
 

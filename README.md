@@ -35,7 +35,7 @@ graph TD
 ```
 
 ### Key Invariants:
-1. **Fail-Closed Guarantee**: No evidence = No completed research state. Unusable evidence never contributes to negative clearance claims (`INSUFFICIENT_COVERAGE`).
+1. **Fail-Closed Invariant**: No evidence = No completed research state. Unusable evidence never contributes to negative clearance claims (`INSUFFICIENT_COVERAGE`).
 2. **Models Reason, Code Governs**: Gemini performs semantic entity extraction and evidence classification; deterministic code owns policy, query compile, invalidation, and packet state.
 3. **Screenplay Privacy**: Full screenplays remain inside Google Cloud. Only whitelisted tokens leave GCP to Parallel Search API.
 

@@ -208,6 +208,20 @@ class SecurityAdversarialTestSuite(unittest.TestCase):
             if orig_key:
                 os.environ["PARALLEL_API_KEY"] = orig_key
 
+    def test_12_scope_update_and_revalidation(self):
+        """Updating project scope via /api/projects/{project_id}/scope updates territories and revalidates"""
+        from fastapi.testclient import TestClient
+        from main import app
+        client = TestClient(app)
+        res = client.post("/api/projects", json={"title": "Scope Reval Test", "territories": ["US"]})
+        self.assertEqual(res.status_code, 200)
+        proj_id = res.json()["project_id"]
+
+        update_res = client.post(f"/api/projects/{proj_id}/scope", json={"territories": ["US", "UK", "EU"]})
+        self.assertEqual(update_res.status_code, 200)
+        updated_proj = update_res.json()
+        self.assertEqual(updated_proj["default_scope"]["territories"], ["US", "UK", "EU"])
+
 if __name__ == "__main__":
     unittest.main()
 

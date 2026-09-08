@@ -2,9 +2,11 @@
 
 > **Tagline:** Continuous Clearance Evidence Control for Film & Television Productions  
 > **Track:** Parallel Track (Grounding & Search for Agentic Cinema)  
-> **Google Stack:** Google Cloud Platform, Gemini Enterprise Agent Platform, Vertex AI (`gemini-2.5-flash`), Google ADK 2.x, Firestore, Cloud Run (Target Deployment Architecture)  
+> **Google Stack:** Google Cloud Platform, Gemini Enterprise Agent Platform, Vertex AI (`gemini-2.5-flash`), Google ADK 2.x, Firestore, Cloud Run  
 > **Partner Substrate:** Parallel Search API (`api.parallel.ai/v1/search`)  
-> **Deployment Status:** `DEPLOYMENT_NOT_PROVEN` on live Cloud Run; 100% reproducible via documented local runner  
+> **Deployment Status:** LIVE on Google Cloud Run  
+> **Live Public Frontend:** [https://obstat-frontend-586563372673.us-central1.run.app](https://obstat-frontend-586563372673.us-central1.run.app)  
+> **Live Public Backend:** [https://obstat-backend-586563372673.us-central1.run.app](https://obstat-backend-586563372673.us-central1.run.app)  
 > **GitHub Repository:** [https://github.com/winsznx/obstat.git](https://github.com/winsznx/obstat.git)  
 
 ---
@@ -36,7 +38,7 @@ graph TD
 
 ### Key Technical Innovations:
 1. **Google ADK 2.x Graph Workflow**: Instantiates genuine `google.adk.Agent` and `google.adk.Workflow` primitives, coordinating Vertex AI Gemini 2.5 Flash for entity extraction with deterministic governance tools for policy enforcement.
-2. **Provenance Egress Firewall**: Protects unreleased screenplay IP by guaranteeing that no raw script dialogue or plot context ever leaves GCP. Outbound search queries are compiled using strict token whitelists (`ITEM_TOKEN`, `TEMPLATE_TOKEN`, `SCOPE_TOKEN`).
+2. **Provenance Egress Firewall**: Protects unreleased screenplay IP by strictly enforcing that no raw script dialogue or plot context ever leaves GCP. Outbound search queries are compiled using strict token whitelists (`ITEM_TOKEN`, `TEMPLATE_TOKEN`, `SCOPE_TOKEN`).
 3. **Fail-Closed Evidence Policy**: Zero usable search results = `INSUFFICIENT_COVERAGE`. OBSTAT refuses to make false negative claims or issue "clean" reports based on thin web data.
 
 ---

@@ -13,7 +13,14 @@ from app.adk.classifier import GeminiClassifier
 
 class ParallelExtractAblationStudy:
     """
-    Empirical ablation evaluating Parallel Search-Only (G-1) vs Search + Selective Extract (G-2).
+    Controlled ablation evaluating Parallel Search-Only (G-1) vs Search + Selective Extract (G-2).
+    
+    Classification: CONTROLLED_EMPIRICAL
+    - Operates on a controlled 10-fixture snippet corpus with simulated timing (0.35s / 0.85s).
+    - Mocks out Gemini with deterministic offline classification.
+    - 100.0% recovery reflects the controlled fixture construction (every truncated test case
+      in TEST_CORPUS was authored with the target entity present in full_page), NOT an
+      empirical in-the-wild Parallel /v1/extract measurement.
     
     Predeclared Acceptance Thresholds:
     1. Usable Evidence Recovery: >= 30.0% of UNUSABLE_SPAN_ABSENT cases must be resolved to usable evidence.
@@ -126,7 +133,7 @@ class TestParallelExtractAblation(unittest.TestCase):
         with patch.object(GeminiClassifier, 'get_client', side_effect=Exception("Offline test")):
             results = ParallelExtractAblationStudy.run_ablation()
         print("\n========================================================")
-        print("PARALLEL SEARCH vs PARALLEL EXTRACT ABLATION RESULTS")
+        print("PARALLEL SEARCH vs PARALLEL EXTRACT ABLATION RESULTS (CONTROLLED_EMPIRICAL)")
         print("========================================================")
         print(f"Items Evaluated: {results['total_items']}")
         print(f"Condition G-1 (Search-Only):")

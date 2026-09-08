@@ -110,6 +110,12 @@ class AlternativeSelectRequest(BaseModel):
     selected_name: str
     disposition_note: Optional[str] = None
 
+class ScopeUpdateRequest(BaseModel):
+    territories: Optional[List[str]] = None
+    distribution_medium: Optional[str] = None
+    plan_version: Optional[str] = None
+    freshness_ttl_days: Optional[int] = None
+
 @app.get("/")
 def read_root():
     return {
@@ -157,6 +163,51 @@ def get_project(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
+@app.post("/api/projects/{project_id}/scope", response_model=Project)
+@app.patch("/api/projects/{project_id}/scope", response_model=Project)
+def update_project_scope(project_id: str, req: ScopeUpdateRequest):
+    repo = get_repository()
+    project = repo.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    old_scope = project.default_scope or ResearchScope()
+    new_scope = old_scope.model_copy(deep=True)
+    if req.territories is not None:
+        new_scope.territories = [t.strip().upper() for t in req.territories if t.strip()]
+    if req.distribution_medium is not None:
+        new_scope.distribution_medium = req.distribution_medium.strip()
+    if req.plan_version is not None:
+        new_scope.plan_version = req.plan_version.strip()
+    if req.freshness_ttl_days is not None:
+        new_scope.freshness_ttl_days = req.freshness_ttl_days
+
+    project.default_scope = new_scope
+
+    # If project has an active revision, evaluate scope diff on active claims immediately
+    if project.active_revision_id:
+        prior_claims = repo.get_claims_for_revision(project.active_revision_id)
+        current_items = [
+            ClearanceItem(
+                item_id=c.item_id,
+                item_string=c.item_string,
+                item_type=c.item_type,
+                occurrences=c.occurrences
+            ) for c in prior_claims
+        ]
+        updated_claims, metrics = RevisionInvalidationEngine.compute_revision_diff(
+            prior_claims=prior_claims,
+            current_items=current_items,
+            prior_revision_id=project.active_revision_id,
+            current_revision_id=project.active_revision_id,
+            prior_scope=old_scope,
+            current_scope=new_scope
+        )
+        repo.save_claims(updated_claims)
+
+    repo.save_project(project)
+    return project
+
 # 2. Revisions list for Timeline
 @app.get("/api/projects/{project_id}/revisions", response_model=List[Revision])
 def get_project_revisions(project_id: str):
@@ -178,7 +229,14 @@ def get_revision_details(revision_id: str):
 
 # 3. Upload & Run Core ADK / Parallel Research Flow
 @app.post("/api/projects/{project_id}/upload_script")
-async def upload_script(project_id: str, draft_label: str, request: Request, file: UploadFile = File(...)):
+async def upload_script(
+    project_id: str, 
+    draft_label: str, 
+    request: Request, 
+    territories: Optional[str] = None,
+    distribution_medium: Optional[str] = None,
+    file: UploadFile = File(...)
+):
     client_ip = request.client.host if request.client else "unknown"
     if not rate_limiter.check_upload_limit(client_ip):
         raise HTTPException(
@@ -223,22 +281,46 @@ async def upload_script(project_id: str, draft_label: str, request: Request, fil
         # Check for prior revision to run invalidation engine
         if project.active_revision_id:
             prior_claims = repo.get_claims_for_revision(project.active_revision_id)
+
+            # Gather historical dispositions for project so constraints persist across non-adjacent revisions
+            historical_dispositions = {}
+            for rev in repo.get_project_revisions(project_id):
+                for hc in repo.get_claims_for_revision(rev.revision_id):
+                    if hc.human_disposition in (HumanDisposition.ALTERNATIVE_SELECTED, HumanDisposition.CHANGE_REQUESTED):
+                        historical_dispositions[hc.item_string.lower()] = hc
+
+            augmented_prior_claims = list(prior_claims)
+            prior_strings = {c.item_string.lower() for c in prior_claims}
+            for norm_str, hc in historical_dispositions.items():
+                if norm_str not in prior_strings:
+                    augmented_prior_claims.append(hc)
+
+            current_scope = project.default_scope.model_copy(deep=True) if project.default_scope else ResearchScope()
+            if territories:
+                current_scope.territories = [t.strip().upper() for t in territories.split(",") if t.strip()]
+            if distribution_medium:
+                current_scope.distribution_medium = distribution_medium.strip()
+
             updated_claims, metrics = RevisionInvalidationEngine.compute_revision_diff(
-                prior_claims=prior_claims,
+                prior_claims=augmented_prior_claims,
                 current_items=extracted_items,
                 prior_revision_id=project.active_revision_id,
                 current_revision_id=revision_id,
                 prior_scope=project.default_scope,
-                current_scope=project.default_scope
+                current_scope=current_scope
             )
+
+            if territories or distribution_medium:
+                project.default_scope = current_scope
             
-            # Only re-research new or modified/unresearched items
+            # Only automatically research genuinely NEW entities introduced in this revision.
+            # Stale claims (STALE_SCRIPT, STALE_SCOPE, DISPOSITION_VIOLATION) remain preserved
+            # in their invalidated state to block the research packet and alert clearance counsel.
             unresearched_items = [
                 item for item in extracted_items 
-                if not any(
+                if any(
                     c.item_string.lower() == item.item_string.lower() and 
-                    c.state == ClaimState.ACTIVE and 
-                    len(c.evidence) > 0 
+                    c.invalidation_reason == "New entity introduced in current revision"
                     for c in updated_claims
                 )
             ]
@@ -247,10 +329,13 @@ async def upload_script(project_id: str, draft_label: str, request: Request, fil
                 new_claims = orchestrator.process_items(
                     revision_id=revision_id,
                     items=unresearched_items,
-                    scope=project.default_scope or ResearchScope(territories=["US", "GLOBAL"])
+                    scope=current_scope
                 )
-                # Merge new claims into updated_claims, replacing placeholders
-                final_claims = [c for c in updated_claims if not any(nc.item_string.lower() == c.item_string.lower() for nc in new_claims)]
+                # Merge new claims into updated_claims, strictly preserving invalidated states
+                final_claims = [
+                    c for c in updated_claims 
+                    if c.invalidation_reason != "New entity introduced in current revision"
+                ]
                 final_claims.extend(new_claims)
                 updated_claims = final_claims
 
@@ -264,10 +349,18 @@ async def upload_script(project_id: str, draft_label: str, request: Request, fil
             }
         else:
             # First draft -> Run full ADK workflow graph with Parallel Search API
+            first_scope = project.default_scope.model_copy(deep=True) if project.default_scope else ResearchScope()
+            if territories:
+                first_scope.territories = [t.strip().upper() for t in territories.split(",") if t.strip()]
+            if distribution_medium:
+                first_scope.distribution_medium = distribution_medium.strip()
+            if territories or distribution_medium:
+                project.default_scope = first_scope
+
             claims = orchestrator.process_items(
                 revision_id=revision_id,
                 items=extracted_items,
-                scope=project.default_scope or ResearchScope(territories=["US", "GLOBAL"])
+                scope=first_scope
             )
             repo.save_claims(claims)
             project.active_revision_id = revision_id

@@ -13,7 +13,13 @@ from app.services.egress_firewall import ProvenanceEgressFirewall
 
 class AdaptiveADKAblationStudy:
     """
-    Empirical ablation evaluating Fixed-Template Research (F-1) vs Adaptive ADK Agent Reasoning (F-2).
+    Policy ablation evaluating Fixed-Template Research (F-1) vs Adaptive Query Compilation (F-2).
+    
+    Classification: SYNTHETIC_POLICY
+    - Operates on 10 controlled test cases with simulated timing (0.35s search latency per call).
+    - Evaluates ProvenanceEgressFirewall query compilation rules and token boundaries for ambiguous cases.
+    - Does NOT execute live Vertex AI / Gemini or live Parallel Search API calls in this test.
+    - The 4/4 (100.0%) ambiguity resolution is an analytical policy simulation result.
     
     Predeclared Acceptance Thresholds:
     1. Ambiguity Resolution Rate: >= 40.0% of ambiguous/homonym items must be resolved to decisive outcomes.
@@ -111,7 +117,7 @@ class TestAdaptiveADKAblation(unittest.TestCase):
     def test_adaptive_adk_ablation(self):
         results = AdaptiveADKAblationStudy.run_ablation()
         print("\n========================================================")
-        print("FIXED vs ADAPTIVE ADK REASONING ABLATION RESULTS")
+        print("FIXED vs ADAPTIVE REASONING ABLATION RESULTS (SYNTHETIC_POLICY)")
         print("========================================================")
         print(f"Total Evaluated Entities: {results['total_items']}")
         print(f"Condition F-1 (Fixed Template):")

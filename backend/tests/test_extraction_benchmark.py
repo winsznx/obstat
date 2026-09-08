@@ -33,7 +33,10 @@ In the background, a turntable plays BLUE SUEDE SHOES softly through vintage mon
 Our contract with CYBERDYNE SYSTEMS is signed. Check the ROLEX SUBMARINER on your wrist. It is time.
 """
 
-# Ground-truth entity reference annotations (independently established reference set)
+# Standardized multi-scene screenplay corpus for entity extraction benchmark
+# Classification: CONTROLLED_EMPIRICAL
+# Controlled reference entity annotations (controlled reference corpus; not independently human-annotated).
+# Evaluates entity span extraction and categorization against a fixed reference standard.
 REFERENCE_CLEARANCE_ENTITIES = [
     {"item_string": "ELENA ROSTOVA", "item_type": ItemType.CHARACTER_NAME},
     {"item_string": "WAYNE ENTERPRISES", "item_type": ItemType.BUSINESS_ORG},
@@ -48,8 +51,8 @@ REFERENCE_CLEARANCE_ENTITIES = [
     {"item_string": "ROLEX SUBMARINER", "item_type": ItemType.BRAND_PRODUCT},
 ]
 
-class TestExtractionBenchmark(unittest.TestCase):
-    def test_run_independently_labelled_extraction_benchmark(self):
+class TestControlledReferenceExtractionBenchmark(unittest.TestCase):
+    def test_run_controlled_reference_extraction_benchmark(self):
         # 1. Evaluate Rule-based Structural Parser (Offline Fallback)
         extractor = GeminiExtractor()
         extracted_items_rule = extractor.extract_clearance_items(BENCHMARK_SCREENPLAY_CORPUS, revision_id="benchmark_rev")
@@ -120,7 +123,7 @@ class TestExtractionBenchmark(unittest.TestCase):
         res_gemini = evaluate_extraction(items_gemini, "Vertex AI Gemini 2.5 Flash Semantic Extractor")
 
         print("\n========================================================")
-        print("INDEPENDENTLY LABELLED EXTRACTION BENCHMARK RESULTS")
+        print("CONTROLLED REFERENCE EXTRACTION BENCHMARK RESULTS (CONTROLLED_EMPIRICAL)")
         print("========================================================")
         print(f"Condition 1: {res_rule['mode']}:")
         print(f"  TP: {res_rule['tp']} | FP: {res_rule['fp']} | FN: {res_rule['fn']}")

@@ -17,9 +17,17 @@ from app.services.invalidation_engine import RevisionInvalidationEngine
 
 class CounterfactualBenchmarkSimulator:
     """
-    Simulates three clearance architectures under identical frozen corpus and progression:
+    Simulates three clearance architectures under identical frozen corpus and progression.
+    
+    Classification: ESTIMATE / SYNTHETIC_POLICY
+    - Latency and cost figures are static model estimates calculated from call count
+      (1.8s mean latency multiplier, $0.005 unit cost per call), NOT live measurements.
+    - System B represents a generic naive line/word text-diff baseline.
+    - Competitor internal mechanisms (ClearFrame, Sceneroom) are UNKNOWN from public evidence;
+      no empirical claims of competitor false invalidation are asserted without public proof.
+    
     System A: Full Re-Run (re-researches all entities on every revision)
-    System B: Naive Text-Diff (line-level text diffing, flags edited lines, blind to non-text dependencies)
+    System B: Generic Naive Text-Diff Baseline (line-level text diffing)
     System C: Clearance Dependency Graph Invalidation (CDGI multi-dimensional dependency set)
     """
 
@@ -34,8 +42,9 @@ class CounterfactualBenchmarkSimulator:
         total_stale_survived = 0
         total_false_invalidations = 0
         total_operator_reviews = 0
-        search_latency_per_call = 1.8  # Measured mean fast Parallel search latency (sec)
-        cost_per_call = 0.005          # Parallel search unit cost ($)
+        # ESTIMATE: Modeled parameters based on mean single search call, not live-clocked in test
+        search_latency_per_call = 1.8
+        cost_per_call = 0.005
 
         for d_idx, items in enumerate(drafts):
             calls = len(items)
@@ -95,7 +104,7 @@ class CounterfactualBenchmarkSimulator:
         total_cost = total_sponsor_calls * cost_per_call
 
         return {
-            "system": "System B (Naive Text-Diff / ClearFrame Model)",
+            "system": "System B (Generic Naive Text-Diff Baseline)",
             "total_sponsor_calls": total_sponsor_calls,
             "stale_claim_survival_count": total_stale_survived,
             "false_invalidation_count": total_false_invalidations,
@@ -264,7 +273,7 @@ class TestCounterfactualBenchmarkSuite(unittest.TestCase):
         print(f"System A (Full Re-Run):")
         print(f"  Sponsor Calls: {res_a['total_sponsor_calls']} | Stale Survived: {res_a['stale_claim_survival_count']} | False Invalidations: {res_a['false_invalidation_count']} | Operator Reviews: {res_a['operator_review_count']}")
         print(f"  Latency: {res_a['cumulative_latency_sec']}s | Est Cost: ${res_a['estimated_cost_usd']:.4f}")
-        print(f"System B (Naive Text-Diff / ClearFrame Model):")
+        print(f"System B (Generic Naive Text-Diff Baseline - Competitor Internals UNKNOWN):")
         print(f"  Sponsor Calls: {res_b['total_sponsor_calls']} | Stale Survived: {res_b['stale_claim_survival_count']} | False Invalidations: {res_b['false_invalidation_count']} | Operator Reviews: {res_b['operator_review_count']}")
         print(f"  Latency: {res_b['cumulative_latency_sec']}s | Est Cost: ${res_b['estimated_cost_usd']:.4f}")
         print(f"System C (OBSTAT CDGI):")

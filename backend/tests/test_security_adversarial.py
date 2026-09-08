@@ -175,5 +175,39 @@ class SecurityAdversarialTestSuite(unittest.TestCase):
             else:
                 os.environ["OBSTAT_MODE"] = orig_mode
 
+    def test_09_upload_rate_limiting_enforcement(self):
+        """Rate limiter blocks more than 10 uploads per IP per hour"""
+        from main import SecurityRateLimiter
+        limiter = SecurityRateLimiter()
+        test_ip = "192.0.2.42"
+        for i in range(10):
+            self.assertTrue(limiter.check_upload_limit(test_ip, max_uploads=10, window_sec=3600))
+        # 11th upload must be rejected
+        self.assertFalse(limiter.check_upload_limit(test_ip, max_uploads=10, window_sec=3600))
+
+    def test_10_payload_size_limit_rejection(self):
+        """Uploading a script exceeding 500 KB raises HTTP 413 Payload Too Large"""
+        from fastapi.testclient import TestClient
+        from main import app
+        client = TestClient(app)
+        oversized_script = b"A" * 520_000 # 520 KB > 500 KB limit
+        files = {"file": ("huge_script.txt", oversized_script, "text/plain")}
+        resp = client.post("/api/projects/proj_dummy/upload_script?draft_label=Draft%201", files=files)
+        self.assertEqual(resp.status_code, 413)
+        self.assertIn("Payload too large", resp.json().get("detail", ""))
+
+    def test_11_extract_missing_credential_fail_closed(self):
+        """Missing PARALLEL_API_KEY environment variable raises named ParallelCredentialMissingError on /v1/extract"""
+        from app.services.parallel_service import ParallelSearchService, ParallelCredentialMissingError
+        svc = ParallelSearchService(api_key=None)
+        orig_key = os.environ.pop("PARALLEL_API_KEY", None)
+        try:
+            with self.assertRaises(ParallelCredentialMissingError):
+                svc.execute_extract(["https://example.com"], "sess_extract_fail")
+        finally:
+            if orig_key:
+                os.environ["PARALLEL_API_KEY"] = orig_key
+
 if __name__ == "__main__":
     unittest.main()
+

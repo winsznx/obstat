@@ -138,8 +138,95 @@ class OBSTATClearanceAgent(BaseAgent):
             evidence_records = [EvidenceRecord(**ev) for ev in raw_evidence]
 
             # -------------------------------------------------------------
-            # Step 4: Deterministic Policy Adjudication
+            # Step 4: Deterministic Policy Adjudication & Adaptive ADK Second Turn
             # -------------------------------------------------------------
+            has_match = any(e.evidence_label == "EXACT_MATCH" and e.is_usable for e in evidence_records)
+            usable_evidence_count = sum(1 for e in evidence_records if e.is_usable)
+
+            queries_used = [query_string]
+            search_ids_used = [r["search_id"] for r in raw_search_results]
+            event_count = 6
+
+            # Check if adaptive refinement is warranted (ambiguity or no usable evidence, with contextual clues)
+            if not has_match and usable_evidence_count == 0 and item.occurrences:
+                # Inspect context snippets for allowed industry/domain keywords
+                context_words = set()
+                for occ in item.occurrences:
+                    for word in occ.context_snippet.lower().split():
+                        cleaned_word = word.strip('",.:;()[]{}')
+                        if cleaned_word in ProvenanceEgressFirewall.ALLOWED_TEMPLATE_TOKENS and cleaned_word not in search_template:
+                            context_words.add(cleaned_word)
+
+                if context_words:
+                    adaptive_keyword = sorted(list(context_words))[0]
+                    adaptive_template = f"{adaptive_keyword} business"
+                    adaptive_egress_args = {
+                        "item_string": item.item_string,
+                        "item_id": item.item_id,
+                        "item_type_str": item.item_type.value,
+                        "search_template": adaptive_template,
+                        "territory": territory
+                    }
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_call(name="egress_authorize_tool", args=adaptive_egress_args)
+                        ])
+                    )
+                    adaptive_auth_res = await self.tools[0].run_async(args=adaptive_egress_args, tool_context=tc)
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_response(name="egress_authorize_tool", response=adaptive_auth_res)
+                        ])
+                    )
+                    adaptive_query = adaptive_auth_res["query_string"]
+                    queries_used.append(adaptive_query)
+
+                    # Execute adaptive follow-up search
+                    adaptive_search_args = {
+                        "query_string": adaptive_query,
+                        "session_id": ctx.session.id
+                    }
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_call(name="parallel_search_tool", args=adaptive_search_args)
+                        ])
+                    )
+                    adaptive_search_results = await self.tools[1].run_async(args=adaptive_search_args, tool_context=tc)
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_response(name="parallel_search_tool", response={"count": len(adaptive_search_results)})
+                        ])
+                    )
+                    search_ids_used.extend([r["search_id"] for r in adaptive_search_results])
+
+                    # Classify adaptive evidence
+                    adaptive_classify_args = {
+                        "item_dict": item.model_dump(),
+                        "search_results": adaptive_search_results,
+                        "session_id": ctx.session.id
+                    }
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_call(name="evidence_classification_tool", args={"item_id": item.item_id, "result_count": len(adaptive_search_results)})
+                        ])
+                    )
+                    raw_adaptive_evidence = await self.tools[2].run_async(args=adaptive_classify_args, tool_context=tc)
+                    yield Event(
+                        author=self.name,
+                        message=types.Content(parts=[
+                            types.Part.from_function_response(name="evidence_classification_tool", response={"evidence_count": len(raw_adaptive_evidence)})
+                        ])
+                    )
+                    adaptive_records = [EvidenceRecord(**ev) for ev in raw_adaptive_evidence]
+                    evidence_records.extend(adaptive_records)
+                    event_count += 6
+
+            # Final adjudication after adaptive pass
             has_match = any(e.evidence_label == "EXACT_MATCH" and e.is_usable for e in evidence_records)
             usable_evidence_count = sum(1 for e in evidence_records if e.is_usable)
 
@@ -159,12 +246,12 @@ class OBSTATClearanceAgent(BaseAgent):
                 state=ClaimState.ACTIVE,
                 outcome=outcome,
                 scope=scope,
-                queries=[query_string],
-                search_ids=[r["search_id"] for r in raw_search_results],
+                queries=queries_used,
+                search_ids=search_ids_used,
                 evidence=evidence_records,
                 adk_session_id=ctx.session.id,
                 adk_invocation_id=ctx.invocation_id,
-                adk_event_count=6  # 3 calls + 3 responses
+                adk_event_count=event_count
             )
             generated_claims.append(claim)
 

@@ -82,3 +82,52 @@ class ParallelSearchService:
             ))
             
         return results
+
+    def execute_extract(
+        self,
+        urls: List[str],
+        session_id: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Parallel Extract API (https://api.parallel.ai/v1/extract) client integration.
+        Extracts full text and clean structured markdown from target URLs.
+        Used selectively when search excerpts truncate entity verbatim match spans.
+        """
+        if not self.api_key:
+            raise ParallelCredentialMissingError(
+                "PARALLEL_API_KEY environment variable is missing. Real Parallel Extract API call cannot execute."
+            )
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "urls": urls
+        }
+
+        resp = None
+        for attempt in range(3):
+            try:
+                resp = requests.post("https://api.parallel.ai/v1/extract", json=payload, headers=headers, timeout=20)
+                if resp.status_code == 200:
+                    break
+            except Exception as e:
+                print(f"[ParallelSearchService.execute_extract] Attempt {attempt + 1} failed: {e}")
+                time.sleep(1.0 * (attempt + 1))
+
+        if not resp or resp.status_code != 200:
+            status_str = resp.status_code if resp else "NO_RESPONSE"
+            text_str = resp.text if resp else "Connection error"
+            raise RuntimeError(f"Parallel Extract API call failed with status {status_str}: {text_str}")
+
+        data = resp.json()
+        results: List[Dict[str, Any]] = []
+        for item in data.get("results", []):
+            results.append({
+                "url": item.get("url", ""),
+                "title": item.get("title", ""),
+                "full_text": item.get("text", item.get("content", "")),
+                "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+            })
+        return results

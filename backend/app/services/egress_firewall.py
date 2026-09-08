@@ -27,7 +27,10 @@ class ProvenanceEgressFirewall:
         "official", "website", "company", "corporation", "trademark", "registry",
         "inc", "ltd", "brand", "product", "location", "venue", "restaurant", "hotel", "bar",
         "menu", "address", "business", "song", "lyrics", "album", "movie", "film",
-        "person", "name", "media", "music", "networks", "network"
+        "person", "name", "media", "music", "networks", "network",
+        "logistics", "shipping", "audio", "sound", "works", "labs", "studio", "records",
+        "entertainment", "holding", "group", "holdings", "technologies", "tech", "services",
+        "global", "industries", "consulting", "transport", "freight", "aerospace"
     }
 
     @classmethod

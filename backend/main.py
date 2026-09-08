@@ -1,10 +1,12 @@
 import os
 import json
 import uuid
+import time
 import hashlib
 import datetime
+from collections import defaultdict
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -38,6 +40,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class SecurityRateLimiter:
+    """
+    In-memory sliding window rate limiter for public judge-accessible endpoints.
+    Protects against uncontrolled API-credit consumption and DoS without requiring login friction.
+    """
+    def __init__(self):
+        self.upload_timestamps = defaultdict(list)
+        self.request_timestamps = defaultdict(list)
+
+    def check_upload_limit(self, client_ip: str, max_uploads: int = 10, window_sec: int = 3600) -> bool:
+        now = time.time()
+        valid = [t for t in self.upload_timestamps[client_ip] if now - t < window_sec]
+        self.upload_timestamps[client_ip] = valid
+        if len(valid) >= max_uploads:
+            return False
+        self.upload_timestamps[client_ip].append(now)
+        return True
+
+    def check_request_limit(self, client_ip: str, max_requests: int = 120, window_sec: int = 60) -> bool:
+        now = time.time()
+        valid = [t for t in self.request_timestamps[client_ip] if now - t < window_sec]
+        self.request_timestamps[client_ip] = valid
+        if len(valid) >= max_requests:
+            return False
+        self.request_timestamps[client_ip].append(now)
+        return True
+
+rate_limiter = SecurityRateLimiter()
+
+@app.middleware("http")
+async def security_rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_limiter.check_request_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests. Please slow down your evaluations."}
+        )
+    response = await call_next(request)
+    return response
 
 extractor = GeminiExtractor()
 orchestrator = ADKGraphOrchestrator()
@@ -136,14 +178,28 @@ def get_revision_details(revision_id: str):
 
 # 3. Upload & Run Core ADK / Parallel Research Flow
 @app.post("/api/projects/{project_id}/upload_script")
-async def upload_script(project_id: str, draft_label: str, file: UploadFile = File(...)):
+async def upload_script(project_id: str, draft_label: str, request: Request, file: UploadFile = File(...)):
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_limiter.check_upload_limit(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded: maximum 10 script uploads per hour per client to protect research credits. Please try again later."
+        )
+
+    file_bytes = await file.read()
+    if len(file_bytes) > 512_000:
+        raise HTTPException(
+            status_code=413,
+            detail="Payload too large: script files must be under 500 KB."
+        )
+
     try:
         repo = get_repository()
         project = repo.get_project(project_id)
         if not project:
             return JSONResponse(status_code=404, content={"detail": f"Project '{project_id}' not found. Please refresh the page."})
 
-        content = (await file.read()).decode("utf-8", errors="ignore")
+        content = file_bytes.decode("utf-8", errors="ignore")
         parsed = ScreenplayParser.parse_text(content, title=file.filename)
         
         revision_id = f"rev_{uuid.uuid4().hex[:8]}"
@@ -171,7 +227,9 @@ async def upload_script(project_id: str, draft_label: str, file: UploadFile = Fi
                 prior_claims=prior_claims,
                 current_items=extracted_items,
                 prior_revision_id=project.active_revision_id,
-                current_revision_id=revision_id
+                current_revision_id=revision_id,
+                prior_scope=project.default_scope,
+                current_scope=project.default_scope
             )
             
             # Only re-research new or modified/unresearched items

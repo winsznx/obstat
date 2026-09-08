@@ -29,6 +29,7 @@ class ClaimState(str, Enum):
     STALE_POLICY = "STALE_POLICY"
     STALE_AGE = "STALE_AGE"
     STALE_EVIDENCE = "STALE_EVIDENCE"
+    DISPOSITION_VIOLATION = "DISPOSITION_VIOLATION"
     SUPERSEDED = "SUPERSEDED"
     REMOVED = "REMOVED"
 
@@ -121,6 +122,7 @@ class Claim(BaseModel):
     occurrences: List[Occurrence] = Field(default_factory=list)  # Backed by occurrences history for valid diff comparison
     human_disposition: Optional[HumanDisposition] = None
     disposition_note: Optional[str] = None
+    invalidation_reason: Optional[str] = None
     adk_session_id: Optional[str] = None
     adk_invocation_id: Optional[str] = None
     adk_event_count: int = 0

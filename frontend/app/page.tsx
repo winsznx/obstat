@@ -159,7 +159,7 @@ export default function App() {
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [filterType, setFilterType] = useState<string>('ALL');
   const [searchFilter, setSearchFilter] = useState<string>('');
-  const [draftLabel, setDraftLabel] = useState('Draft 13');
+  const [draftLabel, setDraftLabel] = useState('Shooting Draft');
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [collapsedUnusable, setCollapsedUnusable] = useState<boolean>(true);
@@ -753,24 +753,24 @@ export default function App() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <span className="text-[10px] font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe] px-2 py-0.5 rounded uppercase">
-                      Controlled Architecture Demonstration (Sample Fixture)
+                      Controlled Architecture Demonstration (Sample Workspace)
                     </span>
                   </div>
                   <h3 className="font-bold text-sm text-[#0f172a] mt-1">CDGI Continuous Clearance Invalidation Engine</h3>
-                  <p className="text-xs text-[#64748b]">Sample Project: &lsquo;The Starlight Heist&rsquo; — Toggle drafts below to preview continuous invalidation mechanism in action.</p>
+                  <p className="text-xs text-[#64748b]">Sample Project: &lsquo;The Starlight Heist&rsquo; — Toggle script revisions below to preview continuous invalidation mechanism in action.</p>
                 </div>
                 <div className="flex items-center space-x-2 bg-[#f1f5f9] p-1 rounded-xl text-xs font-semibold border border-[#e2e8f0] w-fit shrink-0">
                   <button
                     onClick={() => setHeroDraft('d12')}
                     className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${heroDraft === 'd12' ? 'bg-white text-[#0f172a] shadow-xs font-bold' : 'text-[#64748b]'}`}
                   >
-                    Draft 12 (Locked)
+                    Draft A (Locked)
                   </button>
                   <button
                     onClick={() => setHeroDraft('d13')}
                     className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${heroDraft === 'd13' ? 'bg-white text-[#0f172a] shadow-xs font-bold' : 'text-[#64748b]'}`}
                   >
-                    Draft 13 (Revised)
+                    Draft B (Revised)
                   </button>
                 </div>
               </div>
@@ -779,10 +779,10 @@ export default function App() {
                 <div className="p-4 bg-[#f0fdf4] rounded-xl border border-[#bbf7d0] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-bold text-sm text-[#166534]">MERCER VALE</span>
+                      <span className="font-bold text-sm text-[#166534]">STARLIGHT SECURITY SERVICES</span>
                       <span className="text-[10px] font-bold bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded border border-[#86efac]">ACTIVE · RETAINED</span>
                     </div>
-                    <p className="text-xs text-[#15803d] mt-1">Draft 12 character clearance verified against public directories. Zero real-world collisions in scope.</p>
+                    <p className="text-xs text-[#15803d] mt-1">Draft A clearance verified against public business registries. Zero real-world collisions in scope.</p>
                   </div>
                   <button onClick={handleExploreSampleWorkspace} className="text-xs font-bold text-[#15803d] hover:underline cursor-pointer shrink-0">
                     OPEN SAMPLE WORKSPACE &rarr;
@@ -792,10 +792,10 @@ export default function App() {
                 <div className="p-4 bg-[#fff7ed] rounded-xl border border-[#ffedd5] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-bold text-sm text-[#c2410c]">MERCER VALE RECORDS</span>
+                      <span className="font-bold text-sm text-[#c2410c]">STARLIGHT SECURITY HOLDINGS</span>
                       <span className="text-[10px] font-bold bg-[#ea580c] text-white px-2 py-0.5 rounded">STALE_SCRIPT</span>
                     </div>
-                    <p className="text-xs text-[#9a3412] mt-1">Renamed from &lsquo;MERCER VALE&rsquo; (Character) to &lsquo;MERCER VALE RECORDS&rsquo; (Corporate Entity) in Draft 13. Draft 12 character clearance is revoked.</p>
+                    <p className="text-xs text-[#9a3412] mt-1">Renamed from &lsquo;STARLIGHT SECURITY SERVICES&rsquo; to &lsquo;STARLIGHT SECURITY HOLDINGS&rsquo; (Corporate Entity) in Draft B. Prior clearance is revoked.</p>
                   </div>
                   <button onClick={handleExploreSampleWorkspace} className="text-xs font-bold text-[#c2410c] hover:underline cursor-pointer shrink-0">
                     OPEN SAMPLE WORKSPACE &rarr;

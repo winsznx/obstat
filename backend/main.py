@@ -158,34 +158,27 @@ def create_project(req: ProjectCreateRequest):
 @app.get("/api/system/preflight")
 def system_preflight():
     """
-    Diagnostic endpoint that checks local/deployed credentials and permissions.
-    Verifies Parallel API key status and Google Cloud Vertex AI ADC identity/permissions.
+    Safe public preflight diagnostic endpoint.
+    Exposes high-level operational booleans and generic guidance without leaking tokens, credentials, or email addresses.
     """
-    gcp_project = os.getenv("GOOGLE_CLOUD_PROJECT", "project-2ac1d1fb-7da1-46b4-90e")
     has_parallel_key = bool(os.getenv("PARALLEL_API_KEY"))
     obstat_mode = os.getenv("OBSTAT_MODE", "DEVELOPMENT")
 
-    vertex_status = "UNKNOWN"
-    vertex_detail = ""
+    vertex_available = False
     try:
         import google.auth
-        from google.genai import types
-        credentials, active_proj = google.auth.default()
-        vertex_status = "ADC_CONFIGURED"
-        vertex_detail = f"Active identity: {getattr(credentials, 'service_account_email', 'User Credentials')}, Quota Project: {active_proj or gcp_project}"
-    except Exception as e:
-        vertex_status = "ADC_UNAVAILABLE"
-        vertex_detail = str(e)
+        credentials, _ = google.auth.default()
+        vertex_available = True
+    except Exception:
+        vertex_available = False
 
     return {
         "status": "ok",
         "obstat_mode": obstat_mode,
-        "gcp_project": gcp_project,
-        "parallel_api_key_configured": has_parallel_key,
-        "vertex_adc_status": vertex_status,
-        "vertex_adc_detail": vertex_detail,
+        "parallel_configured": has_parallel_key,
+        "vertex_adc_configured": vertex_available,
         "required_iam_permission": "aiplatform.endpoints.predict",
-        "required_iam_role": "roles/aiplatform.user (Vertex AI User)"
+        "guidance": "Run 'python scripts/preflight_check.py' locally for full interactive environment diagnostics."
     }
 
 @app.get("/api/projects/sample", response_model=Project)
@@ -690,34 +683,22 @@ def get_clearance_packet(revision_id: str):
         "claims": claims
     }
 
-@app.get("/api/projects/sample")
-def get_sample_project():
-    repo = get_repository()
-    projects = repo.list_projects()
-    for p in projects:
-        if p.project_id == "proj_starlight_01" or "Starlight" in p.title:
-            return p
-    if projects:
-        return projects[0]
-    raise HTTPException(status_code=404, detail="Sample project not found")
-
-
 # 8. Egress Compliance Logs (Project Isolated)
 @app.get("/api/projects/{project_id}/assurance/egress_logs")
 @app.get("/api/assurance/egress_logs")
 def get_egress_logs(project_id: Optional[str] = None):
     repo = get_repository()
     logs = repo.get_egress_logs(project_id=project_id)
-    if not logs and os.getenv("OBSTAT_MODE") != "PRODUCTION":
-        # Controlled demonstration audit entries with explicit classification
+    if not logs and not project_id and os.getenv("OBSTAT_MODE") != "PRODUCTION":
+        # Controlled demonstration audit entries for un-scoped global demo view
         logs = [
             {
-                "query": "MERCER VALE person name official US",
+                "query": "STARLIGHT SECURITY SERVICES business US",
                 "allowed": True,
-                "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
+                "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
                 "search_id": "demo_audit_69970096",
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "project_id": project_id or "proj_starlight_01",
+                "project_id": "proj_starlight_01",
                 "mode": "CONTROLLED_DEMO"
             },
             {
@@ -726,16 +707,7 @@ def get_egress_logs(project_id: Optional[str] = None):
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
                 "search_id": "demo_audit_88fa1093",
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "project_id": project_id or "proj_starlight_01",
-                "mode": "CONTROLLED_DEMO"
-            },
-            {
-                "query": "VELA RECORDS official website business US",
-                "allowed": True,
-                "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
-                "search_id": "demo_audit_88fa1094",
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "project_id": project_id or "proj_starlight_01",
+                "project_id": "proj_starlight_01",
                 "mode": "CONTROLLED_DEMO"
             }
         ]

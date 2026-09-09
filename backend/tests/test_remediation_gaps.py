@@ -69,6 +69,17 @@ def test_assurance_project_isolation():
         revision_id="rev_beta_1"
     )
     
+    # Emit unscoped legacy log (no project_id binding)
+    repo.save_egress_log(
+        query="UNSCOPED LEGACY QUERY business US",
+        allowed=True,
+        provenance=["ITEM_TOKEN", "TEMPLATE_TOKEN"],
+        search_id="search_unscoped_999",
+        timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        project_id=None,
+        revision_id=None
+    )
+    
     # Query Project A Assurance endpoint
     res_a = client.get(f"/api/projects/{proj_a_id}/assurance/egress_logs")
     assert res_a.status_code == 200
@@ -79,19 +90,22 @@ def test_assurance_project_isolation():
     assert res_b.status_code == 200
     logs_b = res_b.json()
     
-    # Verification: A sees ONLY A; B sees ONLY B
+    # Verification: A sees ONLY A; B sees ONLY B; Unscoped legacy logs do NOT leak
     search_ids_a = [log["search_id"] for log in logs_a]
     search_ids_b = [log["search_id"] for log in logs_b]
     
     assert "search_alpha_101" in search_ids_a, "Project A egress logs missing Alpha search record"
     assert "search_beta_202" not in search_ids_a, "TENANT LEAKAGE: Project A saw Project B search record!"
+    assert "search_unscoped_999" not in search_ids_a, "UNSCOPED LEAKAGE: Project A saw unscoped legacy search record!"
     
     assert "search_beta_202" in search_ids_b, "Project B egress logs missing Beta search record"
     assert "search_alpha_101" not in search_ids_b, "TENANT LEAKAGE: Project B saw Project A search record!"
+    assert "search_unscoped_999" not in search_ids_b, "UNSCOPED LEAKAGE: Project B saw unscoped legacy search record!"
 
-def test_system_preflight_endpoint():
+def test_system_preflight_endpoint_safe_privacy():
     """
-    Regression Test A: Verify /api/system/preflight returns diagnostic info.
+    Regression Test A: Verify /api/system/preflight returns safe booleans
+    without leaking private emails, tokens, or infrastructure details.
     """
     res = client.get("/api/system/preflight")
     assert res.status_code == 200
@@ -99,3 +113,9 @@ def test_system_preflight_endpoint():
     assert data["status"] == "ok"
     assert "required_iam_permission" in data
     assert data["required_iam_permission"] == "aiplatform.endpoints.predict"
+    
+    # Assert privacy protection
+    raw_text = res.text
+    assert "@" not in raw_text, "Privacy Leakage: Email address detected in public preflight response!"
+    assert "access_token" not in raw_text, "Privacy Leakage: Token detected in public preflight response!"
+    assert "secret" not in raw_text.lower(), "Privacy Leakage: Secret detected in public preflight response!"

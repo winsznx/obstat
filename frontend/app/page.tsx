@@ -209,7 +209,7 @@ export default function App() {
 
   useEffect(() => {
     if (currentView === 'assurance') {
-      fetchEgressLogs();
+      fetchEgressLogs(activeProject?.project_id);
     } else if (currentView === 'revision_diff' && activeProject) {
       fetchRevisionDiff(activeProject.project_id);
     } else if (currentView === 'packet' && activeRevisionId) {
@@ -269,9 +269,12 @@ export default function App() {
     }
   };
 
-  const fetchEgressLogs = async () => {
+  const fetchEgressLogs = async (projectId?: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/assurance/egress_logs`);
+      const url = projectId 
+        ? `${API_BASE}/api/projects/${projectId}/assurance/egress_logs`
+        : `${API_BASE}/api/assurance/egress_logs`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setEgressLogs(data);
@@ -744,14 +747,19 @@ export default function App() {
               </button>
             </div>
 
-            {/* Interactive Hero Comparison Widget: Draft 12 vs Draft 13 */}
+            {/* Controlled Demonstration Widget: Sample Project Illustrative Mechanism */}
             <div className="w-full max-w-4xl bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-md text-left space-y-4 mx-auto mt-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#e2e8f0] pb-4 gap-3">
                 <div>
-                  <h3 className="font-bold text-sm text-[#0f172a]">Continuous Clearance Demonstration</h3>
-                  <p className="text-xs text-[#64748b]">Toggle between script drafts to see automated evidence invalidation in real time.</p>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe] px-2 py-0.5 rounded uppercase">
+                      Controlled Architecture Demonstration (Sample Fixture)
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-sm text-[#0f172a] mt-1">CDGI Continuous Clearance Invalidation Engine</h3>
+                  <p className="text-xs text-[#64748b]">Sample Project: &lsquo;The Starlight Heist&rsquo; — Toggle drafts below to preview continuous invalidation mechanism in action.</p>
                 </div>
-                <div className="flex items-center space-x-2 bg-[#f1f5f9] p-1 rounded-xl text-xs font-semibold border border-[#e2e8f0] w-fit">
+                <div className="flex items-center space-x-2 bg-[#f1f5f9] p-1 rounded-xl text-xs font-semibold border border-[#e2e8f0] w-fit shrink-0">
                   <button
                     onClick={() => setHeroDraft('d12')}
                     className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${heroDraft === 'd12' ? 'bg-white text-[#0f172a] shadow-xs font-bold' : 'text-[#64748b]'}`}
@@ -774,9 +782,11 @@ export default function App() {
                       <span className="font-bold text-sm text-[#166534]">MERCER VALE</span>
                       <span className="text-[10px] font-bold bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded border border-[#86efac]">ACTIVE · RETAINED</span>
                     </div>
-                    <p className="text-xs text-[#15803d] mt-1">Character clearance verified against public directories. Zero real-world collisions in scope.</p>
+                    <p className="text-xs text-[#15803d] mt-1">Draft 12 character clearance verified against public directories. Zero real-world collisions in scope.</p>
                   </div>
-                  <span className="text-xs font-bold text-[#15803d] shrink-0">0 SEARCHES EXECUTED</span>
+                  <button onClick={handleExploreSampleWorkspace} className="text-xs font-bold text-[#15803d] hover:underline cursor-pointer shrink-0">
+                    OPEN SAMPLE WORKSPACE &rarr;
+                  </button>
                 </div>
               ) : (
                 <div className="p-4 bg-[#fff7ed] rounded-xl border border-[#ffedd5] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -785,9 +795,11 @@ export default function App() {
                       <span className="font-bold text-sm text-[#c2410c]">MERCER VALE RECORDS</span>
                       <span className="text-[10px] font-bold bg-[#ea580c] text-white px-2 py-0.5 rounded">STALE_SCRIPT</span>
                     </div>
-                    <p className="text-xs text-[#9a3412] mt-1">Renamed from &lsquo;MERCER VALE&rsquo; (Character) to &lsquo;MERCER VALE RECORDS&rsquo; (Corporate Entity) in Scene 1. Draft 12 character clearance is revoked.</p>
+                    <p className="text-xs text-[#9a3412] mt-1">Renamed from &lsquo;MERCER VALE&rsquo; (Character) to &lsquo;MERCER VALE RECORDS&rsquo; (Corporate Entity) in Draft 13. Draft 12 character clearance is revoked.</p>
                   </div>
-                  <span className="text-xs font-bold text-[#c2410c] shrink-0">STALE EVIDENCE · RE-RESEARCH REQUIRED</span>
+                  <button onClick={handleExploreSampleWorkspace} className="text-xs font-bold text-[#c2410c] hover:underline cursor-pointer shrink-0">
+                    OPEN SAMPLE WORKSPACE &rarr;
+                  </button>
                 </div>
               )}
             </div>

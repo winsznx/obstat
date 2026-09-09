@@ -1,6 +1,6 @@
 import re
 import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.models.clearance_record import ItemType
 from app.services.db_provider import get_repository
 
@@ -40,7 +40,9 @@ class ProvenanceEgressFirewall:
         item_id: str,
         item_type: ItemType,
         search_template: str,
-        scope_territory: str = "US"
+        scope_territory: str = "US",
+        project_id: Optional[str] = None,
+        revision_id: Optional[str] = None
     ) -> OutboundQuery:
         
         query_text = f"{item_string} {search_template} {scope_territory}".strip()
@@ -74,7 +76,9 @@ class ProvenanceEgressFirewall:
                 allowed=True,
                 provenance=provenance,
                 search_id=f"audit_{uuid_short()}",
-                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
+                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                project_id=project_id,
+                revision_id=revision_id
             )
 
         except EgressViolation as e:
@@ -83,7 +87,9 @@ class ProvenanceEgressFirewall:
                 allowed=False,
                 provenance=["VIOLATION"],
                 search_id="BLOCKED",
-                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
+                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                project_id=project_id,
+                revision_id=revision_id
             )
             raise e
 

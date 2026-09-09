@@ -155,6 +155,54 @@ def create_project(req: ProjectCreateRequest):
     repo.save_project(project)
     return project
 
+@app.get("/api/system/preflight")
+def system_preflight():
+    """
+    Diagnostic endpoint that checks local/deployed credentials and permissions.
+    Verifies Parallel API key status and Google Cloud Vertex AI ADC identity/permissions.
+    """
+    gcp_project = os.getenv("GOOGLE_CLOUD_PROJECT", "project-2ac1d1fb-7da1-46b4-90e")
+    has_parallel_key = bool(os.getenv("PARALLEL_API_KEY"))
+    obstat_mode = os.getenv("OBSTAT_MODE", "DEVELOPMENT")
+
+    vertex_status = "UNKNOWN"
+    vertex_detail = ""
+    try:
+        import google.auth
+        from google.genai import types
+        credentials, active_proj = google.auth.default()
+        vertex_status = "ADC_CONFIGURED"
+        vertex_detail = f"Active identity: {getattr(credentials, 'service_account_email', 'User Credentials')}, Quota Project: {active_proj or gcp_project}"
+    except Exception as e:
+        vertex_status = "ADC_UNAVAILABLE"
+        vertex_detail = str(e)
+
+    return {
+        "status": "ok",
+        "obstat_mode": obstat_mode,
+        "gcp_project": gcp_project,
+        "parallel_api_key_configured": has_parallel_key,
+        "vertex_adc_status": vertex_status,
+        "vertex_adc_detail": vertex_detail,
+        "required_iam_permission": "aiplatform.endpoints.predict",
+        "required_iam_role": "roles/aiplatform.user (Vertex AI User)"
+    }
+
+@app.get("/api/projects/sample", response_model=Project)
+def get_sample_project():
+    repo = get_repository()
+    sample = repo.get_project("proj_starlight_01")
+    if not sample:
+        seed_default_productions(repo)
+        sample = repo.get_project("proj_starlight_01")
+    if sample:
+        return sample
+    projects = repo.list_projects()
+    for p in projects:
+        if "Starlight" in p.title:
+            return p
+    raise HTTPException(status_code=404, detail="Sample project 'proj_starlight_01' not found")
+
 @app.get("/api/projects/{project_id}", response_model=Project)
 def get_project(project_id: str):
     repo = get_repository()
@@ -329,7 +377,8 @@ async def upload_script(
                 new_claims = orchestrator.process_items(
                     revision_id=revision_id,
                     items=unresearched_items,
-                    scope=current_scope
+                    scope=current_scope,
+                    project_id=project_id
                 )
                 # Merge new claims into updated_claims, strictly preserving invalidated states
                 final_claims = [
@@ -360,7 +409,8 @@ async def upload_script(
             claims = orchestrator.process_items(
                 revision_id=revision_id,
                 items=extracted_items,
-                scope=first_scope
+                scope=first_scope,
+                project_id=project_id
             )
             repo.save_claims(claims)
             project.active_revision_id = revision_id
@@ -380,6 +430,16 @@ async def upload_script(
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
+        err_str = str(e)
+        if "aiplatform.endpoints.predict" in err_str or "PermissionDenied" in err_str or "403" in err_str:
+            target_proj = os.getenv("GOOGLE_CLOUD_PROJECT", "project-2ac1d1fb-7da1-46b4-90e")
+            msg = (
+                f"Google Cloud Vertex AI Permission Error: Your active local ADC identity does not have 'aiplatform.endpoints.predict' "
+                f"permission on GCP project '{target_proj}'. "
+                f"To resolve for local execution: run 'gcloud auth application-default login', verify your identity has role "
+                f"'roles/aiplatform.user' (Vertex AI User) on project '{target_proj}', or set GOOGLE_APPLICATION_CREDENTIALS to an authorized service account key."
+            )
+            return JSONResponse(status_code=403, content={"detail": msg, "error_code": "VERTEX_PERMISSION_DENIED", "traceback": tb})
         print(f"[upload_script ERROR] {e}\n{tb}")
         return JSONResponse(status_code=500, content={"detail": str(e), "traceback": tb})
 
@@ -642,11 +702,12 @@ def get_sample_project():
     raise HTTPException(status_code=404, detail="Sample project not found")
 
 
-# 8. Egress Compliance Logs
+# 8. Egress Compliance Logs (Project Isolated)
+@app.get("/api/projects/{project_id}/assurance/egress_logs")
 @app.get("/api/assurance/egress_logs")
-def get_egress_logs():
+def get_egress_logs(project_id: Optional[str] = None):
     repo = get_repository()
-    logs = repo.get_egress_logs()
+    logs = repo.get_egress_logs(project_id=project_id)
     if not logs and os.getenv("OBSTAT_MODE") != "PRODUCTION":
         # Controlled demonstration audit entries with explicit classification
         logs = [
@@ -656,6 +717,7 @@ def get_egress_logs():
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
                 "search_id": "demo_audit_69970096",
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "project_id": project_id or "proj_starlight_01",
                 "mode": "CONTROLLED_DEMO"
             },
             {
@@ -664,6 +726,7 @@ def get_egress_logs():
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
                 "search_id": "demo_audit_88fa1093",
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "project_id": project_id or "proj_starlight_01",
                 "mode": "CONTROLLED_DEMO"
             },
             {
@@ -672,6 +735,7 @@ def get_egress_logs():
                 "provenance": ["ITEM_TOKEN", "ITEM_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "TEMPLATE_TOKEN", "SCOPE_TOKEN"],
                 "search_id": "demo_audit_88fa1094",
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "project_id": project_id or "proj_starlight_01",
                 "mode": "CONTROLLED_DEMO"
             }
         ]

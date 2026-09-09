@@ -76,6 +76,8 @@ class SQLiteRepository(StorageRepository):
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS egress_logs (
             log_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            revision_id TEXT,
             query TEXT NOT NULL,
             allowed INTEGER NOT NULL,
             provenance TEXT NOT NULL,
@@ -83,6 +85,12 @@ class SQLiteRepository(StorageRepository):
             timestamp TEXT NOT NULL
         )
         """)
+
+        for col, col_type in [("project_id", "TEXT"), ("revision_id", "TEXT")]:
+            try:
+                cursor.execute(f"ALTER TABLE egress_logs ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS alternatives (
@@ -255,21 +263,24 @@ class SQLiteRepository(StorageRepository):
             ))
         return claims
 
-    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str) -> None:
+    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str, project_id: Optional[str] = None, revision_id: Optional[str] = None) -> None:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         log_id = f"log_{uuid.uuid4().hex[:8]}"
         cursor.execute(
-            "INSERT INTO egress_logs (log_id, query, allowed, provenance, search_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-            (log_id, query, 1 if allowed else 0, json.dumps(provenance), search_id, timestamp)
+            "INSERT INTO egress_logs (log_id, project_id, revision_id, query, allowed, provenance, search_id, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (log_id, project_id, revision_id, query, 1 if allowed else 0, json.dumps(provenance), search_id, timestamp)
         )
         conn.commit()
         conn.close()
 
-    def get_egress_logs(self) -> List[Dict[str, Any]]:
+    def get_egress_logs(self, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT query, allowed, provenance, search_id, timestamp FROM egress_logs ORDER BY timestamp DESC")
+        if project_id:
+            cursor.execute("SELECT query, allowed, provenance, search_id, timestamp, project_id, revision_id FROM egress_logs WHERE project_id = ? ORDER BY timestamp DESC", (project_id,))
+        else:
+            cursor.execute("SELECT query, allowed, provenance, search_id, timestamp, project_id, revision_id FROM egress_logs ORDER BY timestamp DESC")
         rows = cursor.fetchall()
         conn.close()
         return [
@@ -278,7 +289,9 @@ class SQLiteRepository(StorageRepository):
                 "allowed": bool(row[1]),
                 "provenance": json.loads(row[2]),
                 "search_id": row[3],
-                "timestamp": row[4]
+                "timestamp": row[4],
+                "project_id": row[5],
+                "revision_id": row[6]
             } for row in rows
         ]
 

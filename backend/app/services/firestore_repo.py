@@ -163,9 +163,11 @@ class FirestoreRepository(StorageRepository):
             ))
         return claims
 
-    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str) -> None:
+    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str, project_id: Optional[str] = None, revision_id: Optional[str] = None) -> None:
         doc_ref = self.db.collection("egress_logs").document()
         doc_ref.set({
+            "project_id": project_id,
+            "revision_id": revision_id,
             "query": query,
             "allowed": allowed,
             "provenance": provenance,
@@ -173,8 +175,11 @@ class FirestoreRepository(StorageRepository):
             "timestamp": timestamp
         })
 
-    def get_egress_logs(self) -> List[Dict[str, Any]]:
-        docs = self.db.collection("egress_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+    def get_egress_logs(self, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        query_ref = self.db.collection("egress_logs")
+        if project_id:
+            query_ref = query_ref.where("project_id", "==", project_id)
+        docs = query_ref.order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
         logs = []
         for doc in docs:
             data = doc.to_dict()
@@ -183,7 +188,9 @@ class FirestoreRepository(StorageRepository):
                 "allowed": data["allowed"],
                 "provenance": data["provenance"],
                 "search_id": data["search_id"],
-                "timestamp": data["timestamp"]
+                "timestamp": data["timestamp"],
+                "project_id": data.get("project_id"),
+                "revision_id": data.get("revision_id")
             })
         return logs
 

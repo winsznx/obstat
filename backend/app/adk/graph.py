@@ -42,6 +42,7 @@ class OBSTATClearanceAgent(BaseAgent):
         items_data = state.get("items", [])
         scope_data = state.get("scope", {})
         revision_id = state.get("revision_id", "")
+        project_id = state.get("project_id", "")
 
         scope = ResearchScope(**scope_data) if scope_data else ResearchScope()
         territory = scope.territories[0] if scope.territories else "US"
@@ -75,7 +76,9 @@ class OBSTATClearanceAgent(BaseAgent):
                 "item_id": item.item_id,
                 "item_type_str": item.item_type.value,
                 "search_template": search_template,
-                "territory": territory
+                "territory": territory,
+                "project_id": project_id,
+                "revision_id": revision_id
             }
             yield Event(
                 author=self.name,
@@ -281,7 +284,15 @@ class ADKGraphOrchestrator:
         self.classifier = GeminiClassifier()
 
         # Define official ADK Tool functions with strict type signatures
-        def egress_authorize_tool(item_string: str, item_id: str, item_type_str: str, search_template: str, territory: str) -> Dict[str, Any]:
+        def egress_authorize_tool(
+            item_string: str, 
+            item_id: str, 
+            item_type_str: str, 
+            search_template: str, 
+            territory: str,
+            project_id: Optional[str] = None,
+            revision_id: Optional[str] = None
+        ) -> Dict[str, Any]:
             """Validates entity string against Provenance Egress Firewall and compiles outbound query."""
             item_type = ItemType(item_type_str) if item_type_str in ItemType.__members__ else ItemType.OTHER_RESEARCH_REQUIRED
             outbound_query = ProvenanceEgressFirewall.validate_and_compile_query(
@@ -289,7 +300,9 @@ class ADKGraphOrchestrator:
                 item_id=item_id,
                 item_type=item_type,
                 search_template=search_template,
-                scope_territory=territory
+                scope_territory=territory,
+                project_id=project_id,
+                revision_id=revision_id
             )
             return {
                 "authorized": True,
@@ -362,7 +375,8 @@ class ADKGraphOrchestrator:
         self,
         revision_id: str,
         items: List[ClearanceItem],
-        scope: ResearchScope
+        scope: ResearchScope,
+        project_id: Optional[str] = None
     ) -> List[Claim]:
         """
         Executes clearance research strictly through the official Google ADK runtime:
@@ -375,6 +389,7 @@ class ADKGraphOrchestrator:
             app_name=self.adk_runner.app_name,
             state={
                 "revision_id": revision_id,
+                "project_id": project_id or "",
                 "items": [item.model_dump() for item in items],
                 "scope": scope.model_dump()
             }
@@ -411,7 +426,8 @@ class ADKGraphOrchestrator:
         self,
         revision_id: str,
         items: List[ClearanceItem],
-        scope: ResearchScope
+        scope: ResearchScope,
+        project_id: Optional[str] = None
     ) -> List[Claim]:
         """
         Synchronous entrypoint that runs process_items_async inside the active or dedicated event loop.
@@ -423,6 +439,6 @@ class ADKGraphOrchestrator:
 
         if loop and loop.is_running():
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self.process_items_async(revision_id, items, scope)).result()
+                return pool.submit(asyncio.run, self.process_items_async(revision_id, items, scope, project_id=project_id)).result()
         else:
-            return asyncio.run(self.process_items_async(revision_id, items, scope))
+            return asyncio.run(self.process_items_async(revision_id, items, scope, project_id=project_id))

@@ -36,10 +36,10 @@ class StorageRepository:
     def get_claims_for_revision(self, revision_id: str) -> List[Claim]:
         raise NotImplementedError
         
-    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str) -> None:
+    def save_egress_log(self, query: str, allowed: bool, provenance: List[str], search_id: str, timestamp: str, project_id: Optional[str] = None, revision_id: Optional[str] = None) -> None:
         raise NotImplementedError
         
-    def get_egress_logs(self) -> List[Dict[str, Any]]:
+    def get_egress_logs(self, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     def save_alternative(self, claim_id: str, original_name: str, alternative_name: str, outcome: str, evidence: List[Any]) -> None:

@@ -40,9 +40,9 @@ python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Run complete deterministic unit and invariant suite (25 tests)
+# Run complete deterministic unit, packet gating, and invariant suite (41 tests)
 python3 -m unittest discover -s tests
-# Expected result: Ran 25 tests ... OK (skipped=1 test_live_parallel)
+# Expected result: Ran 41 tests ... OK (skipped=1 test_live_parallel)
 
 # Run security & adversarial fail-closed test battery
 python3 -m unittest tests/test_security_adversarial.py
@@ -57,15 +57,17 @@ python3 tests/run_proof_benchmarks.py
 ```bash
 cd ../frontend
 pnpm install
+pnpm run build
 
 # Run frontend configuration fail-closed invariant test suite
 pnpm exec playwright test tests/api_config.test.ts
 # Expected result: 3 passed
 
-# Run deterministic UI workflow suite
-pnpm exec playwright test tests/e2e.spec.ts
-# Expected result: 2 passed
+# Run responsive mobile & deterministic UI workflow suite
+pnpm exec playwright test tests/clearance.spec.ts tests/e2e.spec.ts
+# Expected result: 5 passed
 ```
+
 
 ---
 
@@ -145,7 +147,8 @@ python3 backend/tests/verify_adk_execution.py
 
 - **Not an E&O Insurance Policy:** OBSTAT provides decision-support evidence control for entertainment attorneys; it does not issue binding legal clearance guarantees.
 - **Reference Policy vs. Open Web:** The 100-case benchmarks measure policy compliance and fail-closed adherence against calibrated fixtures; they are not an unconstrained empirical test of the entire live World Wide Web.
-- **Hosted Cloud Deployment Status:** Labeled `DEPLOYMENT_NOT_PROVEN` until live Cloud Run containers with public domains are activated by production ops.
+- **Hosted Cloud Deployment Status:** `DEPLOYMENT_VERIFIED` with live public Cloud Run HTTPS endpoints for frontend (`https://obstat-frontend-586563372673.us-central1.run.app`) and backend (`https://obstat-backend-586563372673.us-central1.run.app`).
+
 
 ---
 

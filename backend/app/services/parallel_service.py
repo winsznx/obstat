@@ -9,13 +9,20 @@ dotenv.load_dotenv()
 from typing import List, Optional, Dict, Any
 from app.models.clearance_record import ParallelQueryResult
 
+try:
+    from parallel import Parallel
+    HAS_PARALLEL_SDK = True
+except ImportError:
+    HAS_PARALLEL_SDK = False
+
 class ParallelCredentialMissingError(RuntimeError):
     """Raised when PARALLEL_API_KEY is not configured in the runtime environment."""
     pass
 
 class ParallelSearchService:
     """
-    Direct Parallel Search API (https://api.parallel.ai/v1/search) client integration.
+    Official Parallel Web Python SDK (`parallel-web`) client integration.
+    Invokes client.search and client.extract.
     Persists search_id, session_id, queries, mode, timing, domain, and raw excerpts.
     Fails visibly with a named exception when credentials or network calls fail.
     """
@@ -23,6 +30,10 @@ class ParallelSearchService:
     def __init__(self, api_key: Optional[str] = None):
         raw_key = api_key or os.getenv("PARALLEL_API_KEY") or ""
         self.api_key = raw_key.strip() if raw_key else None
+        if self.api_key and HAS_PARALLEL_SDK:
+            self.client = Parallel(api_key=self.api_key)
+        else:
+            self.client = None
 
     def execute_search(
         self,
@@ -40,6 +51,44 @@ class ParallelSearchService:
                 "PARALLEL_API_KEY environment variable is missing. Real Parallel Search API call cannot execute."
             )
 
+        if self.client:
+            try:
+                res = self.client.search(
+                    search_queries=[query],
+                    mode=mode if mode in ("turbo", "fast", "basic", "advanced") else "fast",
+                    objective=objective or f"Screenplay clearance research for entity: {query}"
+                )
+                raw_results = getattr(res, "results", []) or []
+                res_search_id = getattr(res, "search_id", None) or search_id
+
+                results: List[ParallelQueryResult] = []
+                for item in raw_results:
+                    item_url = getattr(item, "url", None) or (item.get("url") if isinstance(item, dict) else "")
+                    item_title = getattr(item, "title", None) or (item.get("title") if isinstance(item, dict) else query)
+                    item_snippet = (
+                        getattr(item, "snippet", None) or getattr(item, "excerpt", None) or 
+                        (item.get("snippet") if isinstance(item, dict) else "") or
+                        (item.get("excerpt") if isinstance(item, dict) else "")
+                    )
+                    item_domain = getattr(item, "domain", None) or (item.get("domain") if isinstance(item, dict) else "")
+
+                    results.append(ParallelQueryResult(
+                        query=query,
+                        objective=objective,
+                        mode=mode,
+                        search_id=res_search_id,
+                        session_id=session_id,
+                        url=item_url,
+                        title=item_title,
+                        excerpt=item_snippet,
+                        domain=item_domain,
+                        retrieved_at=retrieved_at
+                    ))
+                return results
+            except Exception as e:
+                print(f"[ParallelSearchService] SDK call failed, attempting REST fallback: {e}")
+
+        # Direct REST fallback if SDK is unavailable or encounters unexpected format
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -57,7 +106,7 @@ class ParallelSearchService:
                 if resp.status_code == 200:
                     break
             except Exception as e:
-                print(f"[ParallelSearchService] Attempt {attempt + 1} failed: {e}")
+                print(f"[ParallelSearchService REST] Attempt {attempt + 1} failed: {e}")
                 time.sleep(1.0 * (attempt + 1))
 
         if not resp or resp.status_code != 200:
@@ -91,12 +140,30 @@ class ParallelSearchService:
         """
         Parallel Extract API (https://api.parallel.ai/v1/extract) client integration.
         Extracts full text and clean structured markdown from target URLs.
-        Used selectively when search excerpts truncate entity verbatim match spans.
         """
         if not self.api_key:
             raise ParallelCredentialMissingError(
                 "PARALLEL_API_KEY environment variable is missing. Real Parallel Extract API call cannot execute."
             )
+
+        if self.client:
+            try:
+                res = self.client.extract(urls=urls)
+                raw_results = getattr(res, "results", []) or []
+                results: List[Dict[str, Any]] = []
+                for item in raw_results:
+                    item_url = getattr(item, "url", None) or (item.get("url") if isinstance(item, dict) else "")
+                    item_title = getattr(item, "title", None) or (item.get("title") if isinstance(item, dict) else "")
+                    item_text = getattr(item, "text", None) or getattr(item, "content", None) or (item.get("text") if isinstance(item, dict) else "")
+                    results.append({
+                        "url": item_url,
+                        "title": item_title,
+                        "full_text": item_text,
+                        "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    })
+                return results
+            except Exception as e:
+                print(f"[ParallelSearchService.execute_extract] SDK call failed, attempting REST fallback: {e}")
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -113,7 +180,7 @@ class ParallelSearchService:
                 if resp.status_code == 200:
                     break
             except Exception as e:
-                print(f"[ParallelSearchService.execute_extract] Attempt {attempt + 1} failed: {e}")
+                print(f"[ParallelSearchService.execute_extract REST] Attempt {attempt + 1} failed: {e}")
                 time.sleep(1.0 * (attempt + 1))
 
         if not resp or resp.status_code != 200:
@@ -131,3 +198,4 @@ class ParallelSearchService:
                 "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
             })
         return results
+

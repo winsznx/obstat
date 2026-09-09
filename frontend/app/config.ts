@@ -3,7 +3,11 @@ export function resolveApiBase(): string {
   if (configured && configured.trim().length > 0) {
     return configured.trim();
   }
-  // In production, require explicit backend configuration or same-origin deployment
+  // During Next.js static build phase, return empty string for relative paths
+  if (process.env.NEXT_PHASE) {
+    return '';
+  }
+  // In production runtime, require explicit backend configuration
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
       "[FATAL CONFIGURATION ERROR] Missing NEXT_PUBLIC_API_BASE in production build. " +
@@ -14,3 +18,6 @@ export function resolveApiBase(): string {
   // Local development default
   return 'http://localhost:8000';
 }
+
+
+

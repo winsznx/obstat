@@ -1,7 +1,10 @@
 # Deployment & Cloud Infrastructure Guide — OBSTAT
 
-> **Status:** `DEPLOYMENT_NOT_PROVEN`  
-> In accordance with cold audit policy, no live Cloud Run service is claimed as active production until public HTTPS URLs are provisioned and live health checks succeed. The architecture below specifies the Google-first deployment contract for Google Cloud Run, Secret Manager, Cloud Firestore, and Vertex AI.
+> **Status:** `DEPLOYMENT_VERIFIED`  
+> Live Cloud Run microservices provisioned and verified with public HTTPS ingress endpoints.
+> - **Frontend Web App:** `https://obstat-frontend-586563372673.us-central1.run.app`
+> - **Backend API Service:** `https://obstat-backend-586563372673.us-central1.run.app`
+
 
 ---
 

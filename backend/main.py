@@ -560,11 +560,49 @@ def get_clearance_packet(revision_id: str):
     claims = repo.get_claims_for_revision(revision_id)
 
     total_items = len(claims)
+    
     stale_claims = [c for c in claims if c.state != ClaimState.ACTIVE]
+    insufficient_coverage_claims = [c for c in claims if c.outcome == ResearchOutcome.INSUFFICIENT_COVERAGE]
     undisposed_matches = [c for c in claims if c.outcome in (ResearchOutcome.MATCH_FOUND, ResearchOutcome.AMBIGUOUS_MATCH) and not c.human_disposition]
-    errors = [c for c in claims if c.outcome in (ResearchOutcome.RESEARCH_ERROR, ResearchOutcome.POLICY_BLOCKED)]
+    errors = [c for c in claims if c.outcome in (ResearchOutcome.RESEARCH_ERROR, ResearchOutcome.POLICY_BLOCKED, ResearchOutcome.RIGHTS_PATH_REQUIRED)]
+    
+    blocked_reasons = []
+    for c in claims:
+        state_val = c.state.value if hasattr(c.state, 'value') else str(c.state)
+        outcome_val = c.outcome.value if hasattr(c.outcome, 'value') else str(c.outcome)
+        usable_count = len([e for e in c.evidence if getattr(e, 'is_usable', False)])
 
-    is_complete = (len(stale_claims) == 0 and len(undisposed_matches) == 0 and len(errors) == 0 and total_items > 0)
+        if c.state != ClaimState.ACTIVE:
+            reason_msg = f"Claim state is '{state_val}' (not ACTIVE)."
+            if c.invalidation_reason:
+                reason_msg += f" Details: {c.invalidation_reason}"
+            blocked_reasons.append({"claim_id": c.claim_id, "item_string": c.item_string, "reason": reason_msg})
+        elif c.outcome == ResearchOutcome.INSUFFICIENT_COVERAGE:
+            blocked_reasons.append({
+                "claim_id": c.claim_id,
+                "item_string": c.item_string,
+                "reason": f"INSUFFICIENT_COVERAGE: {usable_count} usable evidence sources returned under policy."
+            })
+        elif c.outcome in (ResearchOutcome.RESEARCH_ERROR, ResearchOutcome.POLICY_BLOCKED, ResearchOutcome.RIGHTS_PATH_REQUIRED):
+            blocked_reasons.append({
+                "claim_id": c.claim_id,
+                "item_string": c.item_string,
+                "reason": f"Unresolved research outcome '{outcome_val}'."
+            })
+        elif c.outcome in (ResearchOutcome.MATCH_FOUND, ResearchOutcome.AMBIGUOUS_MATCH) and not c.human_disposition:
+            blocked_reasons.append({
+                "claim_id": c.claim_id,
+                "item_string": c.item_string,
+                "reason": f"Match found ('{outcome_val}') requiring counsel disposition."
+            })
+        elif usable_count == 0 and not c.human_disposition:
+            blocked_reasons.append({
+                "claim_id": c.claim_id,
+                "item_string": c.item_string,
+                "reason": f"Zero usable evidence sources available for claim without human disposition."
+            })
+
+    is_complete = (len(blocked_reasons) == 0 and total_items > 0)
     packet_status = "RESEARCH_PACKET_COMPLETE" if is_complete else "RESEARCH_PACKET_BLOCKED"
 
     # Integrity SHA-256 computation
@@ -578,18 +616,31 @@ def get_clearance_packet(revision_id: str):
         "project": project,
         "revision": revision,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "blocked_reasons": blocked_reasons,
         "summary": {
             "total_items": total_items,
             "no_match_in_scope": sum(1 for c in claims if c.outcome == ResearchOutcome.NO_MATCH_FOUND_IN_SCOPE),
             "matches_found": sum(1 for c in claims if c.outcome == ResearchOutcome.MATCH_FOUND),
             "ambiguous_matches": sum(1 for c in claims if c.outcome == ResearchOutcome.AMBIGUOUS_MATCH),
-            "insufficient_coverage": sum(1 for c in claims if c.outcome == ResearchOutcome.INSUFFICIENT_COVERAGE),
+            "insufficient_coverage": len(insufficient_coverage_claims),
             "stale_count": len(stale_claims),
             "dispositions_recorded": sum(1 for c in claims if c.human_disposition is not None),
-            "actions_required": len(stale_claims) + len(undisposed_matches)
+            "actions_required": len(blocked_reasons)
         },
         "claims": claims
     }
+
+@app.get("/api/projects/sample")
+def get_sample_project():
+    repo = get_repository()
+    projects = repo.list_projects()
+    for p in projects:
+        if p.project_id == "proj_starlight_01" or "Starlight" in p.title:
+            return p
+    if projects:
+        return projects[0]
+    raise HTTPException(status_code=404, detail="Sample project not found")
+
 
 # 8. Egress Compliance Logs
 @app.get("/api/assurance/egress_logs")
